@@ -72,6 +72,7 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="GeoDataSource.dat" />
+    <None Include="GeoDataSource.nuspec" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

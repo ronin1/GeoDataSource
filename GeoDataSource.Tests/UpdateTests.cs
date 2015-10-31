@@ -7,7 +7,7 @@ using NUnit.Framework;
 
 namespace GeoDataSource.Tests
 {
-    [TestFixture]
+    [TestFixture(Category = "NotAppVeyor")]
     public class UpdateTests
     {
         [Test]

@@ -6,9 +6,9 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("GeoDataSource")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("CSharp GeoNames.org cached data wrapper")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("GeoDataSource")]
 [assembly: AssemblyProduct("GeoDataSource")]
 [assembly: AssemblyCopyright("Copyright ©  2013")]
 [assembly: AssemblyTrademark("")]

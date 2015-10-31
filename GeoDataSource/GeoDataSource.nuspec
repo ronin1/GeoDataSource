@@ -1,0 +1,22 @@
+﻿<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>$id$</id>
+    <version>$version$</version>
+    <title>$title$</title>
+    <authors>$author$</authors>
+    <owners>$author$</owners>
+    <licenseUrl>https://github.com/nothingmn/GeoDataSource</licenseUrl>
+    <projectUrl>https://github.com/ronin1/GeoDataSource</projectUrl>
+    <iconUrl>http://www.geonames.org/img/globe.gif</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>$description$</description>
+    <releaseNotes></releaseNotes>
+    <copyright>$copyright$</copyright>
+    <tags>GeoNames.org csharp data cache wrapper</tags>
+    <!--<files>
+      <file src="..\..\SomeRoot\**\*.*" target="" />
+    </files>-->
+  </metadata>
+</package>
+<!-- NOTE: see https://docs.nuget.org/create/creating-and-publishing-a-package -->
