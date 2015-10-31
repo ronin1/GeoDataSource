@@ -17,7 +17,7 @@ namespace GeoDataSource
 	{
 		//GeoNameDatabase.allCountries.dat
 
-	    public static Task<GeoData> LoadAsync()
+        public static Task<GeoData> LoadAsync()
 	    {
 	        if (current != null) return Task.FromResult(Current);
 	        return Task.Factory.StartNew(() =>
@@ -27,35 +27,24 @@ namespace GeoDataSource
 	        }).Result;
 	    }
 
-	    private static GeoData current = null;
-		private static object _Slock = new object();
+        internal GeoData() { }
+        private static GeoData current;
+        static GeoData()
+        {
+            if (System.IO.File.Exists(DataManager.DataFile))
+                current = Serialize.DeserializeBinaryFromDisk<GeoData>(DataManager.DataFile);
+            else
+                current = Serialize.DeserializeBinaryFromResource<GeoData>("GeoDataSource.GeoDataSource.dat");
+        }
 		public static GeoData Current
 		{
-			get
-			{
-				lock (_Slock)
-				{
-					if (current == null)
-					{
-					    if (System.IO.File.Exists(DataManager.DataFile))
-					    {
-                            current = Serialize.DeserializeBinaryFromDisk<GeoData>(DataManager.DataFile);
-					    }
-					    else
-					    {
-                            current = Serialize.DeserializeBinaryFromResource<GeoData>("GeoDataSource.GeoDataSource.dat");
-					    }
-					}
-				}
-				return current;
-			}
+			get { return current; }
 		}
 
-
-        public List<TimeZone> TimeZones { get; set; }
-	    public List<FeatureCode> FeatureCodes { get; set; }
-        public List<GeoName> GeoNames { get; set; }
-        public List<Country> Countries { get; set; }
+        public List<TimeZone> TimeZones { get; internal set; }
+	    public List<FeatureCode> FeatureCodes { get; internal set; }
+        public List<GeoName> GeoNames { get; internal set; }
+        public List<Country> Countries { get; internal set; }
 
 		//private static List<System.Globalization.RegionInfo> countries = null;
 		private static object _lock = new object();

@@ -71,7 +71,9 @@
     <Compile Include="TimeZoneParser.cs" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="GeoDataSource.dat" />
+    <EmbeddedResource Include="GeoDataSource.dat">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
     <None Include="GeoDataSource.nuspec" />
     <None Include="packages.config" />
   </ItemGroup>

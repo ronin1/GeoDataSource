@@ -10,6 +10,7 @@ namespace GeoDataSource.Tests
     [TestFixture(Category = "NotAppVeyor")]
     public class UpdateTests
     {
+        [Explicit("This is not really a test. Run to update local dat file.")]
         [Test]
         public void TestUpdateProcess()
         {
