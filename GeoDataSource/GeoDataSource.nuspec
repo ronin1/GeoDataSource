@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package >
   <metadata>
-	<id>GeoDataSource</id>
+	<id>$id$</id>
     <version>$version$</version>
     <title>$title$</title>
     <authors>$author$</authors>
@@ -17,5 +17,9 @@
     <dependencies>
       <dependency id="SharpZipLib" version="0.86.0" />
     </dependencies>
+    <files>
+      <file src="bin\$configuration$\$id$.pdb" target="lib\net45\" />
+      <file src="bin\$configuration$\*.dat" target="lib\net45\" />
+    </files>
   </metadata>
 </package>
