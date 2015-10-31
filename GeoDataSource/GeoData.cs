@@ -57,7 +57,7 @@ namespace GeoDataSource
         public List<GeoName> GeoNames { get; set; }
         public List<Country> Countries { get; set; }
 
-		private static List<System.Globalization.RegionInfo> countries = null;
+		//private static List<System.Globalization.RegionInfo> countries = null;
 		private static object _lock = new object();
 
 
@@ -78,7 +78,7 @@ namespace GeoDataSource
         }
 
 
-		private static Dictionary<string, List<GeoName>> countryProvinces = null;
+		//private static Dictionary<string, List<GeoName>> countryProvinces = null;
 		private static object _pLock = new object();
 
         public bool CountryHasProvince(string Country, string Province)

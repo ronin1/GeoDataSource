@@ -35,7 +35,6 @@ namespace GeoDataSource
         {
             FeatureCode n = new FeatureCode();
             string[] parts = Line.Split('\t');
-            int id = 0;
 
             if (parts[0].Contains("."))
             {

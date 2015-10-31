@@ -35,7 +35,6 @@ namespace GeoDataSource
             {
                 return ConvertStreamToBytes(stm);
             }
-            return null;
         }
         public static object DeSerializeBinary(MemoryStream memStream)
         {
@@ -92,7 +91,6 @@ namespace GeoDataSource
             {
                 return ConvertStreamToBytes(stm);
             }
-            return null;
         }
         public static bool SerializeXMLToDisk(object request, string Filename)
         {
@@ -106,7 +104,6 @@ namespace GeoDataSource
             {
                 return ConvertStreamToString(stm);
             }
-            return null;
         }
 
         public static MemoryStream SerializeXML(object request)
@@ -143,7 +140,7 @@ namespace GeoDataSource
                 xmlSerializer.Serialize(memoryStream1, request);
                 memoryStream2 = memoryStream1;
             }
-            catch (Exception exc)
+            catch (Exception)
             {
                 memoryStream2 = null;
             }
