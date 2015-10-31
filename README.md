@@ -1,4 +1,4 @@
-GeoDataSource
+GeoDataSource [![Build status](https://ci.appveyor.com/api/projects/status/kivvkhal2pc42216/branch/master?svg=true)](https://ci.appveyor.com/project/ronin1/geodatasource/branch/master)
 =============
 GeoDataSource is a .NET Class Library based off of the data from http://www.geonames.org.  We only capture the Country and Province level of information, which ends up taking a 1.2GB file down to 1.7MB.  Useful and practical for most web based input forms.
 
