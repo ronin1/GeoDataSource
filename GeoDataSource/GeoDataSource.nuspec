@@ -1,22 +1,21 @@
-﻿<?xml version="1.0"?>
+<?xml version="1.0"?>
 <package >
   <metadata>
-    <id>$id$</id>
+	<id>GeoDataSource</id>
     <version>$version$</version>
     <title>$title$</title>
     <authors>$author$</authors>
     <owners>$author$</owners>
-    <licenseUrl>https://github.com/nothingmn/GeoDataSource</licenseUrl>
-    <projectUrl>https://github.com/ronin1/GeoDataSource</projectUrl>
-    <iconUrl>http://www.geonames.org/img/globe.gif</iconUrl>
+    <licenseUrl>http://creativecommons.org/licenses/by/3.0/</licenseUrl>
+    <projectUrl>https://github.com/nothingmn/GeoDataSource</projectUrl>
+    <iconUrl>http://www.geonames.org/geonames.ico</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>$description$</description>
-    <releaseNotes></releaseNotes>
-    <copyright>$copyright$</copyright>
-    <tags>GeoNames.org csharp data cache wrapper</tags>
-    <!--<files>
-      <file src="..\..\SomeRoot\**\*.*" target="" />
-    </files>-->
+    <description>GeoDataSource is a .NET Class Library based off of the data from http://www.geonames.org</description>
+    <releaseNotes>Initial public release</releaseNotes>
+    <copyright>Copyright 2013</copyright>
+    <tags>GeoNames Country Countries Province State TimeZone</tags>
+    <dependencies>
+      <dependency id="SharpZipLib" version="0.86.0" />
+    </dependencies>
   </metadata>
 </package>
-<!-- NOTE: see https://docs.nuget.org/create/creating-and-publishing-a-package -->

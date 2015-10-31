@@ -25,3 +25,6 @@ Data Available
 * TimeZone Information
 * Feature Codes (detailed descriptions about each item)
 
+Nuget
+=====
+For alpha development nuget, add the following url to your nuget path: https://ci.appveyor.com/nuget/GeoDataSource
