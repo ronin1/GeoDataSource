@@ -44,7 +44,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CountriesTests.cs" />
+    <Compile Include="CountrieProvinceTests.cs" />
     <Compile Include="ThreadedProvinceData.cs" />
     <Compile Include="UpdateTests.cs" />
     <Compile Include="ValidationTests.cs" />
