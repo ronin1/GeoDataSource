@@ -31,8 +31,8 @@ namespace GeoDataSource
         private static GeoData current;
         static GeoData()
         {
-            if (System.IO.File.Exists(DataManager.DataFile))
-                current = Serialize.DeserializeBinaryFromDisk<GeoData>(DataManager.DataFile);
+            if (System.IO.File.Exists(DataManager.Instance.DataFile))
+                current = Serialize.DeserializeBinaryFromDisk<GeoData>(DataManager.Instance.DataFile);
             else
                 current = Serialize.DeserializeBinaryFromResource<GeoData>("GeoDataSource.GeoDataSource.dat");
         }
