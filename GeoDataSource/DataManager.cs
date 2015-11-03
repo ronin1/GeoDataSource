@@ -13,10 +13,14 @@ namespace GeoDataSource
 {
     public sealed class DataManager
     {
+        #region singleton boiler plate
+
         //NOTE: framework level thread-safe lazy singleton pattern
         private DataManager() { }
         class Inner { static readonly internal DataManager SINGLETON = new DataManager(); }
         public static DataManager Instance { get { return Inner.SINGLETON; } }
+
+        #endregion
 
         public string DataFile
         {
@@ -27,7 +31,7 @@ namespace GeoDataSource
         {
             get
             {
-                string dll = typeof (DataManager).Assembly.CodeBase;
+                string dll = typeof(DataManager).Assembly.CodeBase;
                 Uri u;
                 Uri.TryCreate(dll, UriKind.RelativeOrAbsolute, out u);
                 FileInfo fi = new FileInfo(u.LocalPath);
@@ -47,7 +51,9 @@ namespace GeoDataSource
 
         const string dataFile = "GeoDataSource";
         const string countriesRawFile = "allCountries.txt";
-        private static readonly object _lock = new object();
+        static readonly object _lock = new object();
+
+        #region update pre-checks
 
         bool CanWriteTest(string tmpFile)
         {
@@ -106,6 +112,8 @@ namespace GeoDataSource
             return shouldDownload;
         }
 
+        #endregion
+
         [Flags]
         internal enum UpdateStep : int
         {
@@ -125,8 +133,19 @@ namespace GeoDataSource
             return Update(UpdateStep.All);
         }
 
+        /// <summary>
+        /// load file: GeoData - LastModified.txt
+        /// if available then
+        /// try to HTTP head the data source <see cref="http://download.geonames.org/export/dump/allCountries.zip"/>
+        /// pull off last - modified header 
+        /// if newer than the file last-modified, do a GET to download
+        /// else do a get to download
+        /// </summary>
         internal Task Update(UpdateStep steps)
         {
+            if (steps == UpdateStep.None)
+                throw new InvalidOperationException("steps == UpdateStep.None");
+
             return Task.Factory.StartNew(() =>
             {
                 lock (_lock)
@@ -142,16 +161,9 @@ namespace GeoDataSource
                     string lastModifiedFile = Path.Combine(Root, LastModified);
                     string tmpFile = Path.Combine(Root, Guid.NewGuid().ToString());
                     bool canReadWrite = steps.HasFlag(UpdateStep.WriteCheck) ? CanWriteTest(tmpFile) : true;
+                    bool shouldDownload = steps.HasFlag(UpdateStep.UpdateCheck) ? 
+                        ShouldDownloadCheck(canReadWrite, lastModifiedFile) : true;
 
-                    //load file: GeoData-LastModified.txt
-                    //if available then 
-                    //try to http head the data source url: http://download.geonames.org/export/dump/allCountries.zip
-                    //pull off last-modified header
-                    //if newer than the file last-modified, do a GET to download
-                    //else
-                    // do a get to download
-
-                    bool shouldDownload = steps.HasFlag(UpdateStep.UpdateCheck) ? ShouldDownloadCheck(canReadWrite, lastModifiedFile) : true;
                     if (canReadWrite && shouldDownload)
                     {
                         var downloadTasks = new List<Task>();
@@ -194,6 +206,8 @@ namespace GeoDataSource
             });
         }
 
+        #region core update helpers
+
         Task DownloadFile(ParallelWebClient client, string url, string file, Action<ParallelWebClient> callback = null)
         {
             return client.DownloadData(url).ContinueWith(t =>
@@ -212,6 +226,9 @@ namespace GeoDataSource
             public readonly string Root;
             public GeoFileSet(string root)
             {
+                if (string.IsNullOrWhiteSpace(root))
+                    throw new ArgumentException("root can not be null or blank!");
+
                 Root = root;
             }
 
@@ -268,5 +285,6 @@ namespace GeoDataSource
             }
         }
 
+        #endregion
     }
 }
