@@ -62,6 +62,7 @@ namespace GeoDataSource
         {
             //check to see if we have read/write permission to disk
             bool canReadWrite = false;
+            var f = new FileInfo(tmpFile);
             try
             {
                 File.WriteAllText(tmpFile, "testing write access");
@@ -73,12 +74,13 @@ namespace GeoDataSource
             {
                 _logger.Error(ex.Message);
             }
-            _logger.DebugFormat("CanWriteTest({0}) => {1}", tmpFile, canReadWrite);
+            _logger.DebugFormat("CanWriteTest({0}) => {1}", f.Name, canReadWrite);
             return canReadWrite;
         }
 
         bool ShouldDownloadCheck(bool canReadWrite, string lastModifiedFile)
         {
+            var f = new FileInfo(lastModifiedFile);
             bool shouldDownload = !File.Exists(lastModifiedFile);
             if (canReadWrite && File.Exists(lastModifiedFile))
             {
@@ -113,7 +115,7 @@ namespace GeoDataSource
                     }).Wait();
                 }
             }
-            _logger.DebugFormat("ShouldDownloadCheck({0} , {1}) => {2}", canReadWrite, lastModifiedFile, shouldDownload);
+            _logger.DebugFormat("ShouldDownloadCheck({0} , {1}) => {2}", canReadWrite, f.Name, shouldDownload);
             return shouldDownload;
         }
 
@@ -172,33 +174,39 @@ namespace GeoDataSource
                     if (canReadWrite && shouldDownload)
                     {
                         var downloadTasks = new List<Task>();
-                        var request = new WebClientRequest();
-                        request.Headers = new WebHeaderCollection();
-                        var client = new ParallelWebClient(request);
-
+                        
                         if (steps.HasFlag(UpdateStep.Download))
                         {
-                            downloadTasks.Add(DownloadFile(client, allCountriesUrl, fs.allCountriesFile, c =>
+                            downloadTasks.Add(DownloadFile(countryInfoUrl, fs.countryInfoFile));
+                            downloadTasks.Add(DownloadFile(featureCodes_enUrl, fs.featureCodes_enFile));
+                            downloadTasks.Add(DownloadFile(timeZonesUrl, fs.timeZonesFile));
+                            downloadTasks.Add(DownloadFile(allCountriesUrl, fs.allCountriesFile, c =>
                             {
-                                if (steps.HasFlag(UpdateStep.ChangeModifiedDate))
+                                try
                                 {
-                                    var headers = c.ResponseHeaders;
-                                    foreach (string h in headers.Keys)
+                                    if (steps.HasFlag(UpdateStep.ChangeModifiedDate))
                                     {
-                                        if (h.ToLowerInvariant() == "last-modified")
+                                        var headers = c.ResponseHeaders;
+                                        foreach (string h in headers.Keys)
                                         {
-                                            var header = headers[h];
-                                            DateTime headerDate = DateTime.Now;
-                                            DateTime.TryParse(header.ToString(), out headerDate);
-                                            File.WriteAllText(lastModifiedFile, headerDate.ToString());
-                                            break;
+                                            if (h.ToLowerInvariant() == "last-modified")
+                                            {
+                                                var header = headers[h];
+                                                DateTime headerDate = DateTime.Now;
+                                                DateTime.TryParse(header.ToString(), out headerDate);
+                                                File.WriteAllText(lastModifiedFile, headerDate.ToString());
+                                                break;
+                                            }
                                         }
                                     }
                                 }
+                                catch (Exception dex)
+                                {
+                                    string s = string.Format("DownloadFile: CallBack => {0}", new FileInfo(fs.allCountriesFile).Name);
+                                    _logger.Error(s, dex);
+                                }
                             }));
-                            downloadTasks.Add(DownloadFile(client, countryInfoUrl, fs.countryInfoFile));
-                            downloadTasks.Add(DownloadFile(client, featureCodes_enUrl, fs.featureCodes_enFile));
-                            downloadTasks.Add(DownloadFile(client, timeZonesUrl, fs.timeZonesFile));
+
                             Task.WaitAll(downloadTasks.ToArray());
                         }
                         if (steps.HasFlag(UpdateStep.Extraction))
@@ -224,24 +232,54 @@ namespace GeoDataSource
 
         #region core update helpers
 
-        Task DownloadFile(ParallelWebClient client, string url, string file, Action<ParallelWebClient> callback = null)
+        Task DownloadFile(string url, string file, Action<WebClient> callback = null)
         {
-            _logger.DebugFormat("DownloadFile: queued => {0}", url);
-            return client.DownloadData(url).ContinueWith(t =>
+            var f = new FileInfo(file);
+            var client = new WebClient();
+            if (f.Exists)
             {
-                if (File.Exists(file))
-                {
-                    _logger.DebugFormat("DownloadFile: remove local => {0}", file);
-                    File.Delete(file);
+                _logger.DebugFormat("DownloadFile: remove local => {0}", f.Name);
+                File.Delete(file);
+            }
+
+            var u = new Uri(url);
+            double lastPct = 0;
+            client.DownloadProgressChanged += (o,e) =>
+            {
+                try {
+                    double pct = Math.Round((double)e.BytesReceived / e.TotalBytesToReceive, 3) * 100;
+                    if (lastPct < pct)
+                    {
+                        lastPct = pct;
+                        _logger.DebugFormat("DownloadFile: {0:F1}% {1}", pct, f.Name);
+                    }
                 }
+                catch(Exception ex)
+                {
+                    _logger.Error(string.Format("DownloadFile: DownloadProgressChanged {0}", f.Name), ex);
+                }
+            };
+            client.DownloadFileCompleted += (o,e) =>
+            {
+                try {
+                    _logger.InfoFormat("DownloadFile: completed => {0}", f.Name);
+                    if (client != null)
+                    {
+                        if (callback != null)
+                            callback(client);
 
-                _logger.InfoFormat("DownloadFile: begin => {0}", url);
-                File.WriteAllBytes(file, t.Result);
-
-                _logger.InfoFormat("DownloadFile: completed => {0}", file);
-                if (callback != null)
-                    callback(client);
-            });
+                        client.Dispose();
+                    }
+                    else
+                        _logger.WarnFormat("DownloadFile: null client handle => {0}", f.Name);
+                }
+                catch(Exception ex)
+                {
+                    _logger.Error(string.Format("DownloadFile: DownloadFileCompleted {0}", f.Name), ex);
+                }
+            };
+            _logger.InfoFormat("DownloadFile: Begin => {0}", url);
+            return client.DownloadFileTaskAsync(u, f.Name);
         }
 
         class GeoFileSet
@@ -281,12 +319,13 @@ namespace GeoDataSource
         bool ConvertZipToDat(GeoFileSet fs)
         {
             bool success = false;
+            var f = new FileInfo(fs.allCountriesFile);
             //downloaded, now convert zip into serialized dat file
             if (File.Exists(fs.allCountriesFile))
             {
                 if (File.Exists(fs.countriesRawPath))
                 {
-                    _logger.DebugFormat("ConvertZipToDat: removing {0}", fs.countriesRawPath);
+                    _logger.DebugFormat("ConvertZipToDat: removing {0}", new FileInfo(fs.countriesRawPath).Name);
                     File.Delete(fs.countriesRawPath);
                 }
 
@@ -294,7 +333,7 @@ namespace GeoDataSource
                 fz.ExtractZip(fs.allCountriesFile, Root, FastZip.Overwrite.Always, null, null, null, true);
                 if (File.Exists(fs.countriesRawPath))
                 {
-                    _logger.InfoFormat("ConvertZipToDat: parsing extracted => {0}", fs.allCountriesFile);
+                    _logger.InfoFormat("ConvertZipToDat: parsing extracted => {0}", f.Name);
                     GeoData gd = GeoNameParser.ParseFile(
                         fs.countriesRawPath, 
                         fs.timeZonesFile, 
@@ -308,10 +347,10 @@ namespace GeoDataSource
                     success = true;
                 }
                 else
-                    _logger.WarnFormat("ConvertZipToDat: Extraction failed => {0}", fs.allCountriesFile);
+                    _logger.WarnFormat("ConvertZipToDat: Extraction failed => {0}", f.Name);
             }
             else
-                _logger.WarnFormat("ConvertZipToDat: FileNotFound => {0}", fs.allCountriesFile);
+                _logger.WarnFormat("ConvertZipToDat: FileNotFound => {0}", f.Name);
 
             return success;
         }
@@ -322,7 +361,7 @@ namespace GeoDataSource
             {
                 if (File.Exists(f))
                 {
-                    _logger.DebugFormat("FileCleanup: {0}", f);
+                    _logger.DebugFormat("FileCleanup: {0}", new FileInfo(f).Name);
                     File.Delete(f);
                 }
             }
