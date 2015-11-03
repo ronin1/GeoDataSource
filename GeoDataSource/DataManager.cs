@@ -37,12 +37,12 @@ namespace GeoDataSource
 
         const string LastModified = "GeoDataSource-LastModified.txt";
         const string allCountriesUrl = "http://download.geonames.org/export/dump/allCountries.zip";
-        //private static string alternateNamesUrl = "http://download.geonames.org/export/dump/alternateNames.zip";
-        //private static string admin1CodesUrl = "http://download.geonames.org/export/dump/admin1CodesASCII.txt";
-        //private static string admin2CodesUrl = "http://download.geonames.org/export/dump/admin2Codes.txt";
+        //const string alternateNamesUrl = "http://download.geonames.org/export/dump/alternateNames.zip";
+        //const string admin1CodesUrl = "http://download.geonames.org/export/dump/admin1CodesASCII.txt";
+        //const string admin2CodesUrl = "http://download.geonames.org/export/dump/admin2Codes.txt";
         const string countryInfoUrl = "http://download.geonames.org/export/dump/countryInfo.txt";
         const string featureCodes_enUrl = "http://download.geonames.org/export/dump/featureCodes_en.txt";
-        //private static string languagecodesUrl = "http://download.geonames.org/export/dump/iso-languagecodes.txt";
+        //const string languagecodesUrl = "http://download.geonames.org/export/dump/iso-languagecodes.txt";
         const string timeZonesUrl = "http://download.geonames.org/export/dump/timeZones.txt";
 
         const string dataFile = "GeoDataSource";
@@ -106,21 +106,42 @@ namespace GeoDataSource
             return shouldDownload;
         }
 
+        [Flags]
+        internal enum UpdateStep : int
+        {
+            None = 0,
+            WriteCheck = 1,
+            UpdateCheck = 2,
+            Download = 4,
+            ChangeModifiedDate = 8,
+            Extraction = 16,
+            Cleanup = 32,
+
+            All = WriteCheck | UpdateCheck | Download | Extraction | Cleanup,
+        }
+
         public Task Update()
+        {
+            return Update(UpdateStep.All);
+        }
+
+        internal Task Update(UpdateStep steps)
         {
             return Task.Factory.StartNew(() =>
             {
                 lock (_lock)
                 {
+                    var fs = new GeoFileSet(Root)
+                    {
+                        allCountriesFile = Path.Combine(Root, dataFile + ".zip"),
+                        countryInfoFile = Path.Combine(Root, "countryInfo.txt"),
+                        featureCodes_enFile = Path.Combine(Root, "featureCodes_en.txt"),
+                        timeZonesFile = Path.Combine(Root, "timeZones.txt"),
+                    };
+
                     string lastModifiedFile = Path.Combine(Root, LastModified);
                     string tmpFile = Path.Combine(Root, Guid.NewGuid().ToString());
-
-                    string allCountriesFile = Path.Combine(Root, dataFile + ".zip");
-                    string countryInfoFile = Path.Combine(Root, "countryInfo.txt");
-                    string featureCodes_enFile = Path.Combine(Root, "featureCodes_en.txt");
-                    string timeZonesFile = Path.Combine(Root, "timeZones.txt");
-
-                    bool canReadWrite = CanWriteTest(tmpFile);
+                    bool canReadWrite = steps.HasFlag(UpdateStep.WriteCheck) ? CanWriteTest(tmpFile) : true;
 
                     //load file: GeoData-LastModified.txt
                     //if available then 
@@ -130,7 +151,7 @@ namespace GeoDataSource
                     //else
                     // do a get to download
 
-                    bool shouldDownload = ShouldDownloadCheck(canReadWrite, lastModifiedFile);
+                    bool shouldDownload = steps.HasFlag(UpdateStep.UpdateCheck) ? ShouldDownloadCheck(canReadWrite, lastModifiedFile) : true;
                     if (canReadWrite && shouldDownload)
                     {
                         var downloadTasks = new List<Task>();
@@ -138,27 +159,36 @@ namespace GeoDataSource
                         request.Headers = new WebHeaderCollection();
                         var client = new ParallelWebClient(request);
 
-                        downloadTasks.Add(DownloadFile(client, allCountriesUrl, allCountriesFile, c =>
+                        if (steps.HasFlag(UpdateStep.Download))
                         {
-                            var headers = c.ResponseHeaders;
-                            foreach (string h in headers.Keys)
+                            downloadTasks.Add(DownloadFile(client, allCountriesUrl, fs.allCountriesFile, c =>
                             {
-                                if (h.ToLowerInvariant() == "last-modified")
+                                if (steps.HasFlag(UpdateStep.ChangeModifiedDate))
                                 {
-                                    var header = headers[h];
-                                    DateTime headerDate = DateTime.Now;
-                                    DateTime.TryParse(header.ToString(), out headerDate);
-                                    File.WriteAllText(lastModifiedFile, headerDate.ToString());
-                                    break;
+                                    var headers = c.ResponseHeaders;
+                                    foreach (string h in headers.Keys)
+                                    {
+                                        if (h.ToLowerInvariant() == "last-modified")
+                                        {
+                                            var header = headers[h];
+                                            DateTime headerDate = DateTime.Now;
+                                            DateTime.TryParse(header.ToString(), out headerDate);
+                                            File.WriteAllText(lastModifiedFile, headerDate.ToString());
+                                            break;
+                                        }
+                                    }
                                 }
-                            }
-                        }));
-                        downloadTasks.Add(DownloadFile(client, countryInfoUrl, countryInfoFile));
-                        downloadTasks.Add(DownloadFile(client, featureCodes_enUrl, featureCodes_enFile));
-                        downloadTasks.Add(DownloadFile(client, timeZonesUrl, timeZonesFile));
-
-                        Task.WaitAll(downloadTasks.ToArray());
-                        ConvertZipToDat(allCountriesFile, timeZonesFile, featureCodes_enFile, countryInfoFile);
+                            }));
+                            downloadTasks.Add(DownloadFile(client, countryInfoUrl, fs.countryInfoFile));
+                            downloadTasks.Add(DownloadFile(client, featureCodes_enUrl, fs.featureCodes_enFile));
+                            downloadTasks.Add(DownloadFile(client, timeZonesUrl, fs.timeZonesFile));
+                            Task.WaitAll(downloadTasks.ToArray());
+                        }
+                        if (steps.HasFlag(UpdateStep.Extraction) && ConvertZipToDat(fs))
+                        {
+                            if(steps.HasFlag(UpdateStep.Cleanup))
+                                FileCleanup(fs);
+                        }
                     }
                 }
             });
@@ -177,32 +207,64 @@ namespace GeoDataSource
             });
         }
 
-        void ConvertZipToDat(string allCountriesFile, string timeZonesFile, string featureCodes_enFile, string countryInfoFile)
+        class GeoFileSet
         {
-            string countriesRawPath = Path.Combine(Root, countriesRawFile);
-            //downloaded, now convert zip into serialized dat file
-            if (File.Exists(allCountriesFile))
+            public readonly string Root;
+            public GeoFileSet(string root)
             {
-                if (File.Exists(countriesRawPath))
-                    File.Delete(countriesRawPath);
+                Root = root;
+            }
+
+            public string allCountriesFile { get; set; }
+            public string timeZonesFile { get; set; }
+            public string featureCodes_enFile { get; set; }
+            public string countryInfoFile { get; set; }
+
+            public string countriesRawPath
+            {
+                get { return Path.Combine(Root, countriesRawFile); }
+            }
+
+            public IEnumerable<string> AllFiles
+            {
+                get
+                {
+                    yield return allCountriesFile;
+                    yield return timeZonesFile;
+                    yield return featureCodes_enFile;
+                    yield return countryInfoFile;
+                    yield return countriesRawPath;
+                }
+            }
+        }
+
+        bool ConvertZipToDat(GeoFileSet fs)
+        {
+            bool success = false;
+            //downloaded, now convert zip into serialized dat file
+            if (File.Exists(fs.allCountriesFile))
+            {
+                if (File.Exists(fs.countriesRawPath))
+                    File.Delete(fs.countriesRawPath);
 
                 var fz = new FastZip();
-                fz.ExtractZip(allCountriesFile, Root, FastZip.Overwrite.Always, null, null, null, true);
-                if (File.Exists(countriesRawPath))
+                fz.ExtractZip(fs.allCountriesFile, Root, FastZip.Overwrite.Always, null, null, null, true);
+                if (File.Exists(fs.countriesRawPath))
                 {
-                    GeoData gd = GeoNameParser.ParseFile(countriesRawPath, timeZonesFile, featureCodes_enFile, countryInfoFile);
+                    GeoData gd = GeoNameParser.ParseFile(fs.countriesRawPath, fs.timeZonesFile, fs.featureCodes_enFile, fs.countryInfoFile);
                     Serialize.SerializeBinaryToDisk(gd, DataFile);
+                    success = true;
                 }
-                if (File.Exists(allCountriesFile))
-                    File.Delete(allCountriesFile);
-                if (File.Exists(countriesRawPath))
-                    File.Delete(countriesRawPath);
-                if (File.Exists(countryInfoFile))
-                    File.Delete(countryInfoFile);
-                if (File.Exists(featureCodes_enFile))
-                    File.Delete(featureCodes_enFile);
-                if (File.Exists(timeZonesFile))
-                    File.Delete(timeZonesFile);
+            }
+            return success;
+        }
+
+        void FileCleanup(GeoFileSet fs)
+        {
+            foreach(string f in fs.AllFiles)
+            {
+                if (File.Exists(f))
+                    File.Delete(f);
             }
         }
 
