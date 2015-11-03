@@ -8,11 +8,14 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 using GeoDataSource.Extensions;
 using ICSharpCode.SharpZipLib.Zip;
+using log4net;
 
 namespace GeoDataSource
 {
     public sealed class DataManager
     {
+        static readonly ILog _logger = LogManager.GetLogger(typeof(DataManager));
+
         #region singleton boiler plate
 
         //NOTE: framework level thread-safe lazy singleton pattern
@@ -68,8 +71,9 @@ namespace GeoDataSource
             }
             catch (Exception ex)
             {
-                Trace.TraceError(ex.Message);
+                _logger.Error(ex.Message);
             }
+            _logger.DebugFormat("CanWriteTest({0}) => {1}", tmpFile, canReadWrite);
             return canReadWrite;
         }
 
@@ -109,6 +113,7 @@ namespace GeoDataSource
                     }).Wait();
                 }
             }
+            _logger.DebugFormat("ShouldDownloadCheck({0} , {1}) => {2}", canReadWrite, lastModifiedFile, shouldDownload);
             return shouldDownload;
         }
 
@@ -196,12 +201,23 @@ namespace GeoDataSource
                             downloadTasks.Add(DownloadFile(client, timeZonesUrl, fs.timeZonesFile));
                             Task.WaitAll(downloadTasks.ToArray());
                         }
-                        if (steps.HasFlag(UpdateStep.Extraction) && ConvertZipToDat(fs))
+                        if (steps.HasFlag(UpdateStep.Extraction))
                         {
-                            if(steps.HasFlag(UpdateStep.Cleanup))
-                                FileCleanup(fs);
+                            if (ConvertZipToDat(fs))
+                            {
+                                if (steps.HasFlag(UpdateStep.Cleanup))
+                                    FileCleanup(fs);
+                                else
+                                    _logger.Warn("Update: No Cleanup flags");
+                            }
+                            else
+                                _logger.Warn("Update: Dat conversion failed");
                         }
+                        else
+                            _logger.Warn("Update: No Extraction flags");
                     }
+                    else
+                        _logger.WarnFormat("Update: Not running: canReadWrite=={0} && shouldDownload=={1}", canReadWrite, shouldDownload);
                 }
             });
         }
@@ -210,12 +226,19 @@ namespace GeoDataSource
 
         Task DownloadFile(ParallelWebClient client, string url, string file, Action<ParallelWebClient> callback = null)
         {
+            _logger.DebugFormat("DownloadFile: queued => {0}", url);
             return client.DownloadData(url).ContinueWith(t =>
             {
                 if (File.Exists(file))
+                {
+                    _logger.DebugFormat("DownloadFile: remove local => {0}", file);
                     File.Delete(file);
+                }
 
+                _logger.InfoFormat("DownloadFile: begin => {0}", url);
                 File.WriteAllBytes(file, t.Result);
+
+                _logger.InfoFormat("DownloadFile: completed => {0}", file);
                 if (callback != null)
                     callback(client);
             });
@@ -262,17 +285,34 @@ namespace GeoDataSource
             if (File.Exists(fs.allCountriesFile))
             {
                 if (File.Exists(fs.countriesRawPath))
+                {
+                    _logger.DebugFormat("ConvertZipToDat: removing {0}", fs.countriesRawPath);
                     File.Delete(fs.countriesRawPath);
+                }
 
                 var fz = new FastZip();
                 fz.ExtractZip(fs.allCountriesFile, Root, FastZip.Overwrite.Always, null, null, null, true);
                 if (File.Exists(fs.countriesRawPath))
                 {
-                    GeoData gd = GeoNameParser.ParseFile(fs.countriesRawPath, fs.timeZonesFile, fs.featureCodes_enFile, fs.countryInfoFile);
+                    _logger.InfoFormat("ConvertZipToDat: parsing extracted => {0}", fs.allCountriesFile);
+                    GeoData gd = GeoNameParser.ParseFile(
+                        fs.countriesRawPath, 
+                        fs.timeZonesFile, 
+                        fs.featureCodes_enFile, 
+                        fs.countryInfoFile);
+
+                    _logger.DebugFormat("ConvertZipToDat: storing dat => {0}", DataFile);
                     Serialize.SerializeBinaryToDisk(gd, DataFile);
+
+                    _logger.Info("ConvertZipToDat: completed");
                     success = true;
                 }
+                else
+                    _logger.WarnFormat("ConvertZipToDat: Extraction failed => {0}", fs.allCountriesFile);
             }
+            else
+                _logger.WarnFormat("ConvertZipToDat: FileNotFound => {0}", fs.allCountriesFile);
+
             return success;
         }
 
@@ -281,7 +321,10 @@ namespace GeoDataSource
             foreach(string f in fs.AllFiles)
             {
                 if (File.Exists(f))
+                {
+                    _logger.DebugFormat("FileCleanup: {0}", f);
                     File.Delete(f);
+                }
             }
         }
 
