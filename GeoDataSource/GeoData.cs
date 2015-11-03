@@ -9,7 +9,6 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-
 namespace GeoDataSource
 {
 	[Serializable]
@@ -48,8 +47,6 @@ namespace GeoDataSource
         public List<Country> Countries { get; internal set; }
 
 		//private static List<System.Globalization.RegionInfo> countries = null;
-		private static object _lock = new object();
-
 
 	    public FeatureCode FeatureCode(GeoName geoName)
 	    {
@@ -66,7 +63,6 @@ namespace GeoDataSource
         {
             return (from _tz in TimeZones where _tz.TimeZoneId == TimeZoneId select _tz).FirstOrDefault();            
         }
-
 
 		//private static Dictionary<string, List<GeoName>> countryProvinces = null;
 		private static object _pLock = new object();
@@ -89,7 +85,9 @@ namespace GeoDataSource
         {
             var c = GetCountry(Country);
             var r = c.PostalCodeRegularExpression.Trim();
-            if (c == null || string.IsNullOrEmpty(c.PostalCodeRegularExpression)) return false;
+            if (c == null || string.IsNullOrEmpty(c.PostalCodeRegularExpression))
+                return false;
+
             return Regex.Match(Input, r).Success;
         }
 
@@ -127,11 +125,11 @@ namespace GeoDataSource
                             country = (from c in Countries where c.FipsCode == Input select c).FirstOrDefault();
                         }
                     }
-
                 }
             }
 
-            if(country!=null) country.PhoneInformation = PhoneManager.Current.AllByCountry(country.Name);
+            if(country!=null)
+                country.PhoneInformation = PhoneManager.Current.AllByCountry(country.Name);
 
 	        return country;
 	    }

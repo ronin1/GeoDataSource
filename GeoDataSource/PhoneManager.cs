@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace GeoDataSource
@@ -43,7 +44,6 @@ namespace GeoDataSource
                 Uri.TryCreate(dll, UriKind.RelativeOrAbsolute, out u);
                 FileInfo fi = new FileInfo(u.LocalPath);
                 return fi.Directory.FullName;
-
             }
         }
         public List<PhoneInformation> PhoneInformation { get; private set; }
@@ -72,9 +72,8 @@ namespace GeoDataSource
 
         private static List<PhoneInformation> ParseFromBytes(byte[] data)
         {
-            List<PhoneInformation> phones = new List<PhoneInformation>();
-
-            var str =  System.Text.Encoding.UTF8.GetString(data);
+            var phones = new List<PhoneInformation>();
+            var str =  Encoding.UTF8.GetString(data);
 
             string[] lines = str.Split('\n');
             string currentCountry = "";
@@ -113,15 +112,14 @@ namespace GeoDataSource
                             if (int.TryParse(parts[1], out num)) currentPhone.MobilePrefix = num;
                             if (int.TryParse(parts[2], out num)) currentPhone.NumberOfDigitsAfterMobilePrevix = num;
                         }
-
                     }
-
                 }
             }
             var good = new List<PhoneInformation>();
             foreach (var p in phones)
             {
-                if ((!string.IsNullOrEmpty(p.Country)) && p.Reliable) good.Add(p);
+                if ((!string.IsNullOrEmpty(p.Country)) && p.Reliable)
+                    good.Add(p);
             }
             return good;
         }
@@ -129,7 +127,6 @@ namespace GeoDataSource
         private static List<PhoneInformation> ParseFromFile()
         {
             return ParseFromBytes(System.IO.File.ReadAllBytes(DataFile));
-
         }
     }
 }

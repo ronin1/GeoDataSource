@@ -20,7 +20,7 @@ namespace GeoDataSource
 
         public string DataFile
         {
-            get { return System.IO.Path.Combine(Root, dataFile + ".dat"); }
+            get { return Path.Combine(Root, dataFile + ".dat"); }
         }
 
         string Root
@@ -46,19 +46,19 @@ namespace GeoDataSource
         const string timeZonesUrl = "http://download.geonames.org/export/dump/timeZones.txt";
 
         const string dataFile = "GeoDataSource";
-        private string countriesRawFile = "allCountries.txt";
+        const string countriesRawFile = "allCountries.txt";
         private static readonly object _lock = new object();
 
-        bool CleanupExistingFiles(string tmpFile)
+        bool CanWriteTest(string tmpFile)
         {
             //check to see if we have read/write permission to disk
             bool canReadWrite = false;
             try
             {
-                System.IO.File.WriteAllText(tmpFile, "testing write access");
-                string contents = System.IO.File.ReadAllText(tmpFile);
+                File.WriteAllText(tmpFile, "testing write access");
+                string contents = File.ReadAllText(tmpFile);
                 canReadWrite = !string.IsNullOrEmpty(contents);
-                System.IO.File.Delete(tmpFile);
+                File.Delete(tmpFile); //cleanup existing file
             }
             catch (Exception ex)
             {
@@ -69,10 +69,10 @@ namespace GeoDataSource
 
         bool ShouldDownloadCheck(bool canReadWrite, string lastModifiedFile)
         {
-            bool shouldDownload = !System.IO.File.Exists(lastModifiedFile);
-            if (canReadWrite && System.IO.File.Exists(lastModifiedFile))
+            bool shouldDownload = !File.Exists(lastModifiedFile);
+            if (canReadWrite && File.Exists(lastModifiedFile))
             {
-                var lastModified = System.IO.File.ReadAllText(lastModifiedFile);
+                var lastModified = File.ReadAllText(lastModifiedFile);
                 DateTime lastModifiedDate;
                 if (!DateTime.TryParse(lastModified, out lastModifiedDate))
                 {
@@ -112,16 +112,15 @@ namespace GeoDataSource
             {
                 lock (_lock)
                 {
-                    string lastModifiedFile = System.IO.Path.Combine(Root, LastModified);
-                    string tmpFile = System.IO.Path.Combine(Root, Guid.NewGuid().ToString());
+                    string lastModifiedFile = Path.Combine(Root, LastModified);
+                    string tmpFile = Path.Combine(Root, Guid.NewGuid().ToString());
 
-                    countriesRawFile = System.IO.Path.Combine(Root, countriesRawFile);
-                    string allCountriesFile = System.IO.Path.Combine(Root, dataFile + ".zip");
-                    string countryInfoFile = System.IO.Path.Combine(Root, "countryInfo.txt");
-                    string featureCodes_enFile = System.IO.Path.Combine(Root, "featureCodes_en.txt");
-                    string timeZonesFile = System.IO.Path.Combine(Root, "timeZones.txt");
+                    string allCountriesFile = Path.Combine(Root, dataFile + ".zip");
+                    string countryInfoFile = Path.Combine(Root, "countryInfo.txt");
+                    string featureCodes_enFile = Path.Combine(Root, "featureCodes_en.txt");
+                    string timeZonesFile = Path.Combine(Root, "timeZones.txt");
 
-                    bool canReadWrite = CleanupExistingFiles(tmpFile);
+                    bool canReadWrite = CanWriteTest(tmpFile);
 
                     //load file: GeoData-LastModified.txt
                     //if available then 
@@ -139,13 +138,9 @@ namespace GeoDataSource
                         request.Headers = new WebHeaderCollection();
                         var client = new ParallelWebClient(request);
 
-                        downloadTasks.Add(client.DownloadData(allCountriesUrl).ContinueWith(t =>
+                        downloadTasks.Add(DownloadFile(client, allCountriesUrl, allCountriesFile, c =>
                         {
-                            if (File.Exists(allCountriesFile))
-                                File.Delete(allCountriesFile);
-
-                            File.WriteAllBytes(allCountriesFile, t.Result);
-                            var headers = client.ResponseHeaders;
+                            var headers = c.ResponseHeaders;
                             foreach (string h in headers.Keys)
                             {
                                 if (h.ToLowerInvariant() == "last-modified")
@@ -153,12 +148,11 @@ namespace GeoDataSource
                                     var header = headers[h];
                                     DateTime headerDate = DateTime.Now;
                                     DateTime.TryParse(header.ToString(), out headerDate);
-                                    System.IO.File.WriteAllText(lastModifiedFile, headerDate.ToString());
+                                    File.WriteAllText(lastModifiedFile, headerDate.ToString());
                                     break;
                                 }
                             }
                         }));
-
                         downloadTasks.Add(DownloadFile(client, countryInfoUrl, countryInfoFile));
                         downloadTasks.Add(DownloadFile(client, featureCodes_enUrl, featureCodes_enFile));
                         downloadTasks.Add(DownloadFile(client, timeZonesUrl, timeZonesFile));
@@ -170,37 +164,45 @@ namespace GeoDataSource
             });
         }
 
-        Task DownloadFile(ParallelWebClient client, string url, string file)
+        Task DownloadFile(ParallelWebClient client, string url, string file, Action<ParallelWebClient> callback = null)
         {
             return client.DownloadData(url).ContinueWith(t =>
             {
-                if (System.IO.File.Exists(file))
-                    System.IO.File.Delete(file);
+                if (File.Exists(file))
+                    File.Delete(file);
 
-                System.IO.File.WriteAllBytes(file, t.Result);
+                File.WriteAllBytes(file, t.Result);
+                if (callback != null)
+                    callback(client);
             });
         }
 
         void ConvertZipToDat(string allCountriesFile, string timeZonesFile, string featureCodes_enFile, string countryInfoFile)
         {
+            string countriesRawPath = Path.Combine(Root, countriesRawFile);
             //downloaded, now convert zip into serialized dat file
-            if (System.IO.File.Exists(allCountriesFile))
+            if (File.Exists(allCountriesFile))
             {
-                if (System.IO.File.Exists(countriesRawFile)) System.IO.File.Delete(countriesRawFile);
-                ICSharpCode.SharpZipLib.Zip.FastZip fz = new FastZip();
-                fz.ExtractZip(allCountriesFile, Root, FastZip.Overwrite.Always, null, null, null, true);
-                if (System.IO.File.Exists(countriesRawFile))
-                {
-                    GeoData gd = GeoNameParser.ParseFile(countriesRawFile, timeZonesFile,
-                                                            featureCodes_enFile, countryInfoFile);
+                if (File.Exists(countriesRawPath))
+                    File.Delete(countriesRawPath);
 
+                var fz = new FastZip();
+                fz.ExtractZip(allCountriesFile, Root, FastZip.Overwrite.Always, null, null, null, true);
+                if (File.Exists(countriesRawPath))
+                {
+                    GeoData gd = GeoNameParser.ParseFile(countriesRawPath, timeZonesFile, featureCodes_enFile, countryInfoFile);
                     Serialize.SerializeBinaryToDisk(gd, DataFile);
                 }
-                if (System.IO.File.Exists(allCountriesFile)) System.IO.File.Delete(allCountriesFile);
-                if (System.IO.File.Exists(countriesRawFile)) System.IO.File.Delete(countriesRawFile);
-                if (System.IO.File.Exists(countryInfoFile)) System.IO.File.Delete(countryInfoFile);
-                if (System.IO.File.Exists(featureCodes_enFile)) System.IO.File.Delete(featureCodes_enFile);
-                if (System.IO.File.Exists(timeZonesFile)) System.IO.File.Delete(timeZonesFile);
+                if (File.Exists(allCountriesFile))
+                    File.Delete(allCountriesFile);
+                if (File.Exists(countriesRawPath))
+                    File.Delete(countriesRawPath);
+                if (File.Exists(countryInfoFile))
+                    File.Delete(countryInfoFile);
+                if (File.Exists(featureCodes_enFile))
+                    File.Delete(featureCodes_enFile);
+                if (File.Exists(timeZonesFile))
+                    File.Delete(timeZonesFile);
             }
         }
 
