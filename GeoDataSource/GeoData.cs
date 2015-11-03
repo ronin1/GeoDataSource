@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 namespace GeoDataSource
 {
 	[Serializable]
-	public class GeoData
+	public sealed class GeoData
 	{
 		//GeoNameDatabase.allCountries.dat
 
@@ -28,7 +28,8 @@ namespace GeoDataSource
 	    }
 
         internal GeoData() { }
-        private static GeoData current;
+        readonly static GeoData current;
+
         static GeoData()
         {
             if (System.IO.File.Exists(DataManager.Instance.DataFile))

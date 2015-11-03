@@ -6,11 +6,28 @@ using System.Text.RegularExpressions;
 
 namespace GeoDataSource
 {
-    public class PhoneManager
+    public sealed class PhoneManager
     {
-        private static PhoneManager _current = null;
-        private static object _lock = new object();
-        public static string dataFile = "phones";
+        static readonly PhoneManager _current = new PhoneManager();
+        const string dataFile = "phones";
+
+        private PhoneManager() { }
+        static PhoneManager()
+        {
+            if (System.IO.File.Exists(DataFile))
+            {
+                _current.PhoneInformation = ParseFromFile();
+            }
+            else
+            {
+                using (var rdr = new BinaryReader(typeof(PhoneManager).Assembly.GetManifestResourceStream("GeoDataSource.phones.dat")))
+                {
+                    var bytes = new byte[rdr.BaseStream.Length];
+                    rdr.Read(bytes, 0, bytes.Length);
+                    _current.PhoneInformation = ParseFromBytes(bytes);
+                }
+            }
+        }
 
         public static string DataFile
         {
@@ -32,30 +49,7 @@ namespace GeoDataSource
         public List<PhoneInformation> PhoneInformation { get; private set; }
         public static PhoneManager Current
         {
-            get
-            {
-                lock (_lock)
-                {
-                    _current = new PhoneManager();
-                    {
-                        if (System.IO.File.Exists(DataFile))
-                        {
-                            _current.PhoneInformation = ParseFromFile();                            
-                        }
-                        else
-                        {
-                            using (System.IO.BinaryReader rdr = new BinaryReader(typeof(PhoneManager).Assembly.GetManifestResourceStream("GeoDataSource.phones.dat")))
-                            {
-                                var bytes = new byte[rdr.BaseStream.Length];
-                                rdr.Read(bytes, 0, bytes.Length);
-                                _current.PhoneInformation = ParseFromBytes(bytes);
-
-                            }
-                        }
-                    }
-                    return _current;
-                }
-            }
+            get { return _current; }
         }
 
         public IEnumerable<PhoneInformation> AllByCountry(string country)
