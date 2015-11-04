@@ -50,8 +50,9 @@ namespace GeoDataSource
         public string TwoLetterName { get; set; }
 
         [ProtoMember(21, AsReference = true)]
-        public Country CountryInformation { get; set; }
+        public Country Country { get; set; }
 
+        [ProtoMember(22, AsReference = true)]
         public TimeZone TimeZone { get; set; }
         public FeatureCode FeatureCode { get; set; }
     }

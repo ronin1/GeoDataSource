@@ -22,7 +22,11 @@ namespace GeoDataSource
             _logger.Debug("ParseFile: Start");
             ICollection<GeoName> names = new LinkedList<GeoName>();
             int count = 0;
-            using (var rdr = new StreamReader(_file))
+
+            double lastPct = 0;
+            var f = new FileInfo(_file);
+            using(FileStream fs = f.OpenRead())
+            using (var rdr = new StreamReader(fs))
             {
                 string line = "";
                 do
@@ -31,10 +35,15 @@ namespace GeoDataSource
                     if (!string.IsNullOrEmpty(line))
                     {
                         GeoName n = ParseLine(line);
-                        if (n != null && n.FeatureClass.StartsWith("ADM1"))// || n.FeatureClass.StartsWith("ADM2"))
-                        {
+                        if (n != null)
                             names.Add(n);
-                        }                        
+
+                        double pct = Math.Round((double)fs.Position / f.Length, 1) * 100;
+                        if(pct > lastPct)
+                        {
+                            _logger.DebugFormat("ParseFile: {0:F0}% {1}", pct, f.Name);
+                            lastPct = pct;
+                        }
                     }
                     count++;
                 } while (!string.IsNullOrEmpty(line));
@@ -48,6 +57,10 @@ namespace GeoDataSource
             try {
                 var n = new GeoName();
                 string[] parts = line.Split('\t');
+                n.FeatureClass = parts[7];
+                if (!n.FeatureClass.StartsWith("ADM1"))
+                    return null; //break out early
+
                 int id = 0;
                 if (int.TryParse(parts[0], out id))
                     n.GeoNameId = id;
@@ -69,7 +82,6 @@ namespace GeoDataSource
                 if (decimal.TryParse(parts[5], out ll))
                     n.Longitude = ll;
 
-                n.FeatureClass = parts[7];
                 n.FeatureCodeId = parts[6];
                 n.CountryCode = parts[8];
                 n.AlternateCountryCode = parts[9];

@@ -64,7 +64,14 @@ namespace GeoDataSource.Tests
                         where string.Compare(p.Name, province, true) == 0
                         select p).FirstOrDefault();
 
-            var tz = GeoData.Current.TimeZone(prov);
+            Assert.IsNotNull(prov);
+            Assert.IsNotNull(prov.Country);
+            Assert.IsNotNull(prov.TimeZone);
+
+            var tz = GeoData.Current.TimeZone(prov);           
+            Assert.AreEqual(prov.TimeZone.TimeZoneId, tz.TimeZoneId);
+            Assert.AreEqual(prov.TimeZone.CountryCode, tz.CountryCode);
+
             return tz.TimeZoneId;
         }
 

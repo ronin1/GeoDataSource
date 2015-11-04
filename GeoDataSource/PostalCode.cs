@@ -42,6 +42,6 @@ namespace GeoDataSource
         public GPSAccuracy Accuracy { get; set; }
 
         [ProtoMember(9, AsReference = true)]
-        public Country CountryInformation { get; set; }
+        public Country Country { get; set; }
     }
 }

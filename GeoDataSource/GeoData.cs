@@ -42,9 +42,9 @@ namespace GeoDataSource
         [ProtoMember(2)]
         public ICollection<FeatureCode> FeatureCodes { get; internal set; }
         [ProtoMember(3)]
-        public ICollection<GeoName> GeoNames { get; internal set; }
-        [ProtoMember(4)]
         public ICollection<Country> Countries { get; internal set; }
+        [ProtoMember(4)]
+        public ICollection<GeoName> GeoNames { get; internal set; }        
         [ProtoMember(5)]
         public ICollection<PostalCode> PostalCodes { get; internal set; }
 

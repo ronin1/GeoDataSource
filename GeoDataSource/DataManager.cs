@@ -390,52 +390,77 @@ namespace GeoDataSource
                                                    where c != null && !string.IsNullOrWhiteSpace(c.ISOAlpha2)
                                                    group c by c.ISOAlpha2 into cg
                                                    select cg).ToDictionary(g => g.Key.ToLower().Trim(), g => g.FirstOrDefault());
-
-            LinkNamesCountry(gd.GeoNames, iso2Map);
+            {
+                Dictionary<string, TimeZone[]> tzMap = (from t in gd.TimeZones
+                                                        where t != null && !string.IsNullOrWhiteSpace(t.TimeZoneId)
+                                                        group t by t.TimeZoneId.ToLower().Trim() into tg
+                                                        select tg).ToDictionary(g => g.Key, g => g.ToArray());
+                LinkNamesInfos(gd.GeoNames, iso2Map, tzMap);
+            }
 
             var zf = new FileInfo(fs.PostalsRawPath);
             if (zf.Exists)
             {
-                //var incCountries = new[] { "US", "CA", "AT", "MX", "GB" };
-                var incCountries = new[] { "US", "CA" };
+                var incCountries = new[] { "US", "CA", "AT", "MX", "GB" };
+                //var incCountries = new[] { "US", "CA" };
                 gd.PostalCodes = new PostalCodeParser(zf.FullName, incCountries).ParseFile();
-                LinkPostalElements(gd.PostalCodes, iso2Map);
+                LinkPostalInfos(gd.PostalCodes, iso2Map);
             }
             _logger.InfoFormat("ParseGeoFiles: Completed Extraction {0}", DateTime.UtcNow - extractionStart);
             return gd;
         }
 
-        void LinkNamesCountry(IEnumerable<GeoName> names, IDictionary<string, Country> countryMap)
+        void LinkNamesInfos(IEnumerable<GeoName> names, 
+            IDictionary<string, Country> countryMap,
+            IDictionary<string, TimeZone[]> tzMap)
         {
-            if(names != null && countryMap != null && countryMap.Count > 0)
+            if(names != null)
             {
+                _logger.Debug("LinkNamesInfos: Start");
                 foreach(GeoName n in names)
                 {
-                    string k = n.CountryCode; //iso2 alpha
-                    if (string.IsNullOrWhiteSpace(k))
-                        continue;
-
-                    k = k.ToLower().Trim();
-                    if (countryMap.ContainsKey(k))
-                        n.CountryInformation = countryMap[k];
+                    if (countryMap != null && countryMap.Count > 0)
+                    {
+                        string countryCode = n.CountryCode; //iso2 alpha
+                        if (!string.IsNullOrWhiteSpace(countryCode))
+                        {
+                            countryCode = countryCode.ToLower().Trim();
+                            if (countryMap.ContainsKey(countryCode))
+                                n.Country = countryMap[countryCode];
+                        }
+                    }
+                    if(tzMap != null && tzMap.Count > 0 && !string.IsNullOrWhiteSpace(n.TimeZoneId))
+                    {
+                        string tz = n.TimeZoneId.ToLower().Trim();
+                        if (tzMap.ContainsKey(tz))
+                        {
+                            TimeZone[] zones = tzMap[tz];
+                            n.TimeZone = (from z in zones
+                                          where string.Compare(z.CountryCode, n.CountryCode, true) == 0
+                                          select z).FirstOrDefault();
+                        }
+                    }
                 }
+                _logger.Debug("LinkNamesInfos: End");
             }
         }
 
-        void LinkPostalElements(IEnumerable<PostalCode> postals, IDictionary<string, Country> countryMap)
+        void LinkPostalInfos(IEnumerable<PostalCode> postals, IDictionary<string, Country> countryMap)
         {
             if(postals != null && countryMap != null && countryMap.Count > 0)
             {
+                _logger.Debug("LinkPostalInfos: Start");
                 foreach(PostalCode p in postals)
                 {
-                    string k = p.CountryInformation.ISOAlpha2;
+                    string k = p.Country.ISOAlpha2;
                     if (string.IsNullOrWhiteSpace(k))
                         continue;
 
                     k = k.ToLower().Trim();
                     if (countryMap.ContainsKey(k))
-                        p.CountryInformation = countryMap[k];
+                        p.Country = countryMap[k];
                 }
+                _logger.Debug("LinkPostalInfos: End");
             }
         }
 
