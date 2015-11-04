@@ -43,19 +43,6 @@ namespace GeoDataSource
         }
         public static GeoData Current { get { return Inner.SINGLETON; } }
 
-        //readonly static GeoData current;
-        //static GeoData()
-        //{
-        //    if (System.IO.File.Exists(DataManager.Instance.DataFile))
-        //        current = Serialize.DeserializeBinaryFromDisk<GeoData>(DataManager.Instance.DataFile);
-        //    else
-        //        current = Serialize.DeserializeBinaryFromResource<GeoData>("GeoDataSource.GeoDataSource.dat");
-        //}
-        //public static GeoData Current
-        //{
-        //	get { return current; }
-        //}
-
         public ICollection<TimeZone> TimeZones { get; internal set; }
 	    public ICollection<FeatureCode> FeatureCodes { get; internal set; }
         public ICollection<GeoName> GeoNames { get; internal set; }

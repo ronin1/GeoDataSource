@@ -152,19 +152,30 @@ namespace GeoDataSource
             return memoryStream2;
         }
 
-        public static T DeserializeBinaryFromResource<T>(string Name)
+        public static T DeserializeBinaryFromResource<T>(string name)
+            where T : class
         {
-            using (BinaryReader rdr = new BinaryReader(typeof(GeoData).Assembly.GetManifestResourceStream(Name)))
+            using(Stream stm = typeof(GeoData).Assembly.GetManifestResourceStream(name))
             {
-                byte[] data = rdr.ReadBytes((int)rdr.BaseStream.Length);
-                return (T)DeSerializeBinary(new MemoryStream(data));
+                object o = new BinaryFormatter().Deserialize(stm);
+                if (o != null && o is T)
+                    return o as T;
+                else
+                    return null;
             }
         }
 
-        public static T DeserializeBinaryFromDisk<T>(string Filename)
+        public static T DeserializeBinaryFromDisk<T>(string filename)
+            where T : class
         {
-            byte[] data = File.ReadAllBytes(Filename);
-            return (T)DeSerializeBinary(new MemoryStream(data));
+            using(var fs = new FileStream(filename, FileMode.Open, FileAccess.Read))
+            {
+                object o = new BinaryFormatter().Deserialize(fs);
+                if (o != null && o is T)
+                    return o as T;
+                else
+                    return null;
+            }
         }
 
         public static T DeserializeXMLFromDisk<T>(string Filename)

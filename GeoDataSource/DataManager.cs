@@ -389,7 +389,8 @@ namespace GeoDataSource
             var zf = new FileInfo(fs.PostalsRawPath);
             if (zf.Exists)
             {
-                var incCountries = new[] { "US", "CA", "AT", "MX", "GB" };
+                //var incCountries = new[] { "US", "CA", "AT", "MX", "GB" };
+                var incCountries = new[] { "US", "CA" };
                 gd.PostalCodes = new PostalCodeParser(zf.FullName, incCountries).ParseFile();
                 LinkPostalElements(gd);
             }
