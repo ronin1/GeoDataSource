@@ -18,28 +18,43 @@ namespace GeoDataSource
 
         public static Task<GeoData> LoadAsync()
 	    {
-	        if (current != null) return Task.FromResult(Current);
-	        return Task.Factory.StartNew(() =>
-	        {
-	            var x = Current;
-	            return Task.FromResult(x);
-	        }).Result;
-	    }
+            return Task.FromResult(Current);
+            //if (current != null)
+            //    return Task.FromResult(Current);
+
+            //return Task.Factory.StartNew(() =>
+            //{
+            //    var x = Current;
+            //    return Task.FromResult(x);
+            //}).Result;
+        }
 
         internal GeoData() { }
-        readonly static GeoData current;
-
-        static GeoData()
+        class Inner
         {
-            if (System.IO.File.Exists(DataManager.Instance.DataFile))
-                current = Serialize.DeserializeBinaryFromDisk<GeoData>(DataManager.Instance.DataFile);
-            else
-                current = Serialize.DeserializeBinaryFromResource<GeoData>("GeoDataSource.GeoDataSource.dat");
+            static readonly internal GeoData SINGLETON = new GeoData();
+            static Inner()
+            {
+                if (System.IO.File.Exists(DataManager.Instance.DataFile))
+                    SINGLETON = Serialize.DeserializeBinaryFromDisk<GeoData>(DataManager.Instance.DataFile);
+                else
+                    SINGLETON = Serialize.DeserializeBinaryFromResource<GeoData>("GeoDataSource.GeoDataSource.dat");
+            }
         }
-		public static GeoData Current
-		{
-			get { return current; }
-		}
+        public static GeoData Current { get { return Inner.SINGLETON; } }
+
+        //readonly static GeoData current;
+        //static GeoData()
+        //{
+        //    if (System.IO.File.Exists(DataManager.Instance.DataFile))
+        //        current = Serialize.DeserializeBinaryFromDisk<GeoData>(DataManager.Instance.DataFile);
+        //    else
+        //        current = Serialize.DeserializeBinaryFromResource<GeoData>("GeoDataSource.GeoDataSource.dat");
+        //}
+        //public static GeoData Current
+        //{
+        //	get { return current; }
+        //}
 
         public ICollection<TimeZone> TimeZones { get; internal set; }
 	    public ICollection<FeatureCode> FeatureCodes { get; internal set; }

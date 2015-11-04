@@ -12,11 +12,22 @@ namespace GeoDataSource
         static readonly ILog _logger = LogManager.GetLogger(typeof(PostalCodeParser));
 
         readonly string _file;
-        public PostalCodeParser(string file)
+        readonly ICollection<string> _includeCountries;
+        public PostalCodeParser(string file, IEnumerable<string> inclCountries = null)
         {
             _file = file;
+
+            _includeCountries = new HashSet<string>(from c in inclCountries
+                                        where !string.IsNullOrWhiteSpace(c)
+                                        select c.ToLower().Trim());
+            if (_includeCountries.Count == 0)
+                _includeCountries = null;
         }
 
+        /// <summary>
+        /// Parse the file into ram
+        /// </summary>
+        /// <param name="inclCountries">Optional ISO2 Alpha country code to include. If null, everything will get included.</param>
         public ICollection<PostalCode> ParseFile()
         {
             DateTime started = DateTime.UtcNow;
@@ -31,7 +42,7 @@ namespace GeoDataSource
                     line = rdr.ReadLine();
                     if (!string.IsNullOrEmpty(line))
                     {
-                        PostalCode n = ParseLine(line);
+                        PostalCode n = ParseLine(line, _includeCountries);
                         if (n != null)
                         {
                             codes.Add(n);
@@ -44,7 +55,7 @@ namespace GeoDataSource
             return codes;
         }
 
-        static PostalCode ParseLine(string line)
+        static PostalCode ParseLine(string line, ICollection<string> inclCountries)
         {
             try {
                 if (string.IsNullOrWhiteSpace(line))
@@ -53,6 +64,9 @@ namespace GeoDataSource
                 string[] arr = line.Split('\t');
                 var c = new PostalCode();
                 c.Country = new Country { ISOAlpha2 = arr[0] };
+                if (inclCountries != null && !inclCountries.Contains(c.Country.ISOAlpha2.ToLower().Trim()))
+                    return null;
+
                 c.Code = arr[1];
                 c.Name = arr[2];
                 c.Admin1 = new Admin1Code { Name = arr[3], Code = arr[4] };

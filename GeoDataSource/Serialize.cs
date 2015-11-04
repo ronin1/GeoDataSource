@@ -6,6 +6,7 @@ using System.Xml.Serialization;
 
 namespace GeoDataSource
 {
+    //TODO: move to protocol buffer later for better efficiency. SEE: https://github.com/mgravell/protobuf-net
     public class Serialize
     {
         public enum SerializationMethods { Binary, XML };
@@ -17,7 +18,6 @@ namespace GeoDataSource
         }
         public static bool SerializeBinaryToDisk(object request, string filename)
         {
-            //File.WriteAllBytes(filename, SerializeBinaryAsBytes(request));
             var bf = new BinaryFormatter();
             using (var fs = new FileStream(filename, FileMode.OpenOrCreate, FileAccess.Write))
             {
