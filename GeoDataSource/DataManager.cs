@@ -244,6 +244,7 @@ namespace GeoDataSource
 
             var u = new Uri(url);
             double lastPct = 0;
+            DateTime started = DateTime.UtcNow;
             client.DownloadProgressChanged += (o,e) =>
             {
                 try {
@@ -262,7 +263,7 @@ namespace GeoDataSource
             client.DownloadFileCompleted += (o,e) =>
             {
                 try {
-                    _logger.InfoFormat("DownloadFile: completed => {0}", f.Name);
+                    _logger.InfoFormat("DownloadFile: completed {0} => {1}", DateTime.UtcNow - started, f.Name);
                     if (client != null)
                     {
                         if (callback != null)
@@ -330,15 +331,22 @@ namespace GeoDataSource
                 }
 
                 var fz = new FastZip();
+                var af = new FileInfo(fs.allCountriesFile);
+                DateTime unzipStart = DateTime.UtcNow;
+                _logger.DebugFormat("ConvertZipToDat: Begin unzip => {0}", af.Name);
                 fz.ExtractZip(fs.allCountriesFile, Root, FastZip.Overwrite.Always, null, null, null, true);
+                _logger.InfoFormat("ConvertZipToDat: Completed unzip {0} => {1}", DateTime.UtcNow - unzipStart, af.Name);
+
                 if (File.Exists(fs.countriesRawPath))
                 {
-                    _logger.InfoFormat("ConvertZipToDat: parsing extracted => {0}", f.Name);
+                    DateTime extractionStart = DateTime.UtcNow;
+                    _logger.DebugFormat("ConvertZipToDat: Begin Extraction => {0}", f.Name);
                     GeoData gd = GeoNameParser.ParseFile(
                         fs.countriesRawPath, 
                         fs.timeZonesFile, 
                         fs.featureCodes_enFile, 
                         fs.countryInfoFile);
+                    _logger.InfoFormat("ConvertZipToDat: Completed Extraction {0} => {1}", DateTime.UtcNow - extractionStart, f.Name);
 
                     _logger.DebugFormat("ConvertZipToDat: storing dat => {0}", DataFile);
                     Serialize.SerializeBinaryToDisk(gd, DataFile);
