@@ -8,9 +8,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using ProtoBuf;
 
 namespace GeoDataSource
 {
+    [ProtoContract]
 	[Serializable]
 	public sealed class GeoData
 	{
@@ -19,14 +21,6 @@ namespace GeoDataSource
         public static Task<GeoData> LoadAsync()
 	    {
             return Task.FromResult(Current);
-            //if (current != null)
-            //    return Task.FromResult(Current);
-
-            //return Task.Factory.StartNew(() =>
-            //{
-            //    var x = Current;
-            //    return Task.FromResult(x);
-            //}).Result;
         }
 
         internal GeoData() { }
@@ -43,10 +37,15 @@ namespace GeoDataSource
         }
         public static GeoData Current { get { return Inner.SINGLETON; } }
 
+        [ProtoMember(1)]
         public ICollection<TimeZone> TimeZones { get; internal set; }
-	    public ICollection<FeatureCode> FeatureCodes { get; internal set; }
+        [ProtoMember(2)]
+        public ICollection<FeatureCode> FeatureCodes { get; internal set; }
+        [ProtoMember(3)]
         public ICollection<GeoName> GeoNames { get; internal set; }
+        [ProtoMember(4)]
         public ICollection<Country> Countries { get; internal set; }
+        [ProtoMember(5)]
         public ICollection<PostalCode> PostalCodes { get; internal set; }
 
 		//private static List<System.Globalization.RegionInfo> countries = null;
@@ -102,13 +101,9 @@ namespace GeoDataSource
         {
             var country = GetCountry(Country);
             if (country != null)
-            {
                 return ProvincesByCountry(country);
-            }
             else
-            {
                 return null;
-            }
         }
 
 	    public Country GetCountry(string Input)
@@ -130,13 +125,11 @@ namespace GeoDataSource
                     }
                 }
             }
-
             if(country!=null)
                 country.PhoneInformation = PhoneManager.Current.AllByCountry(country.Name);
 
 	        return country;
 	    }
-
 	  
 	}
 }

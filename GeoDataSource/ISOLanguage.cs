@@ -13,7 +13,5 @@ namespace GeoDataSource
         public string ISO_639_2 { get; set; }
         public string ISO_639_1 { get; set; }
         public string LanguageName { get; set; }
-
-            
     }
 }
