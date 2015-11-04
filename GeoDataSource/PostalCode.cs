@@ -28,7 +28,7 @@ namespace GeoDataSource
         [ProtoMember(4)]
         public Admin2Code Admin2 { get; set; }
         [ProtoMember(5)]
-        public Admin3Code Amdin3 { get; set; }
+        public Admin3Code Admin3 { get; set; }
 
         [ProtoMember(6)]
         public decimal Latitude { get; set; }

@@ -54,6 +54,7 @@ namespace GeoDataSource
 
         [ProtoMember(22, AsReference = true)]
         public TimeZone TimeZone { get; set; }
+
         public FeatureCode FeatureCode { get; set; }
     }
 }

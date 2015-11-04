@@ -59,6 +59,7 @@
     <Compile Include="Admin3Code.cs" />
     <Compile Include="Admin4Code.cs" />
     <Compile Include="CountryParser.cs" />
+    <Compile Include="Distance.cs" />
     <Compile Include="FeatureCodeParser.cs" />
     <Compile Include="Country.cs" />
     <Compile Include="GPSAccuracy.cs" />

@@ -77,9 +77,9 @@ namespace GeoDataSource
                 if (string.IsNullOrWhiteSpace(c.Admin2.Name) && string.IsNullOrWhiteSpace(c.Admin2.Code))
                     c.Admin2 = null;
 
-                c.Amdin3 = new Admin3Code { Name = arr[7], Code = arr[8] };
-                if (string.IsNullOrWhiteSpace(c.Amdin3.Name) && string.IsNullOrWhiteSpace(c.Amdin3.Code))
-                    c.Amdin3 = null;
+                c.Admin3 = new Admin3Code { Name = arr[7], Code = arr[8] };
+                if (string.IsNullOrWhiteSpace(c.Admin3.Name) && string.IsNullOrWhiteSpace(c.Admin3.Code))
+                    c.Admin3 = null;
 
                 decimal lat, lng;
                 if (!string.IsNullOrWhiteSpace(arr[9]) && decimal.TryParse(arr[9], out lat))
