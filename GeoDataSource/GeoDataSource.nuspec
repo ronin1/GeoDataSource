@@ -16,6 +16,8 @@
     <tags>GeoNames Country Countries Province State TimeZone</tags>
     <dependencies>
       <dependency id="SharpZipLib" version="0.86.0" />
+      <dependency id="protobuf-net" version="2.0.0" />
+      <!--<dependency id="log4net" version="2.0.3" />-->
     </dependencies>
     <!--<files>
       <file src="bin\$configuration$\*.dat" target="lib\net45\" />
