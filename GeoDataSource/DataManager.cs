@@ -339,14 +339,7 @@ namespace GeoDataSource
 
                 if (File.Exists(fs.countriesRawPath))
                 {
-                    DateTime extractionStart = DateTime.UtcNow;
-                    _logger.DebugFormat("ConvertZipToDat: Begin Extraction => {0}", f.Name);
-                    GeoData gd = GeoNameParser.ParseFile(
-                        fs.countriesRawPath, 
-                        fs.timeZonesFile, 
-                        fs.featureCodes_enFile, 
-                        fs.countryInfoFile);
-                    _logger.InfoFormat("ConvertZipToDat: Completed Extraction {0} => {1}", DateTime.UtcNow - extractionStart, f.Name);
+                    GeoData gd = ParseGeoFiles(fs, f);
 
                     _logger.DebugFormat("ConvertZipToDat: storing dat => {0}", DataFile);
                     Serialize.SerializeBinaryToDisk(gd, DataFile);
@@ -361,6 +354,21 @@ namespace GeoDataSource
                 _logger.WarnFormat("ConvertZipToDat: FileNotFound => {0}", f.Name);
 
             return success;
+        }
+
+        GeoData ParseGeoFiles(GeoFileSet fs, FileInfo f)
+        {
+            DateTime extractionStart = DateTime.UtcNow;
+            _logger.DebugFormat("ConvertZipToDat: Begin Extraction => {0}", f.Name);
+
+            var gd = new GeoData();            
+            gd.TimeZones = new TimeZoneParser(fs.timeZonesFile).ParseFile();
+            gd.FeatureCodes = new FeatureCodeParser(fs.featureCodes_enFile).ParseFile();
+            gd.Countries = new CountryParser(fs.countryInfoFile).ParseFile();
+            gd.GeoNames = new GeoNameParser(fs.countriesRawPath).ParseFile();
+            
+            _logger.InfoFormat("ConvertZipToDat: Completed Extraction {0} => {1}", DateTime.UtcNow - extractionStart, f.Name);
+            return gd;
         }
 
         void FileCleanup(GeoFileSet fs)

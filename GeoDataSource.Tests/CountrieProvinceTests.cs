@@ -16,12 +16,12 @@ namespace GeoDataSource.Tests
             var countries = GeoData.Current.Countries;
             Assert.IsNotNull(countries);
             Assert.Greater(countries.Count(), 200);
-            countries.ForEach(c =>
+            foreach(Country c in countries)
             {
                 Assert.IsNotNull(c);
                 CollectionAssert.IsNotEmpty(c.ContinentId, c.Name);
                 CollectionAssert.IsNotEmpty(c.Name);
-            });
+            }
         }
 
         [TestCase("124", ExpectedResult = "Canada")]

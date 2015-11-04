@@ -41,10 +41,10 @@ namespace GeoDataSource
 			get { return current; }
 		}
 
-        public List<TimeZone> TimeZones { get; internal set; }
-	    public List<FeatureCode> FeatureCodes { get; internal set; }
-        public List<GeoName> GeoNames { get; internal set; }
-        public List<Country> Countries { get; internal set; }
+        public ICollection<TimeZone> TimeZones { get; internal set; }
+	    public ICollection<FeatureCode> FeatureCodes { get; internal set; }
+        public ICollection<GeoName> GeoNames { get; internal set; }
+        public ICollection<Country> Countries { get; internal set; }
 
 		//private static List<System.Globalization.RegionInfo> countries = null;
 

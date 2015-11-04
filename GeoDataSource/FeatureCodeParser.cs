@@ -3,17 +3,23 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace GeoDataSource
 {
-    public class FeatureCodeParser
+    public class FeatureCodeParser : IGeoFileParser<FeatureCode>
     {
-        public static List<FeatureCode> ParseFile(string File)
+        readonly string _file;
+        public FeatureCodeParser(string file)
         {
+            _file = file;
+        }
 
-            List<FeatureCode> Names = new List<FeatureCode>();
+        public ICollection<FeatureCode> ParseFile()
+        {
+            ICollection<FeatureCode> Names = new List<FeatureCode>();
             int count = 0;
-            using (System.IO.StreamReader rdr = new System.IO.StreamReader(File))
+            using (var rdr = new StreamReader(_file))
             {
                 string line = "";
                 do
@@ -27,7 +33,6 @@ namespace GeoDataSource
                     count++;
                 } while (!string.IsNullOrEmpty(line));
             }
-
             return Names;
         }
 

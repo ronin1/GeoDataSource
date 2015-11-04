@@ -57,6 +57,7 @@
     <Compile Include="CountryParser.cs" />
     <Compile Include="FeatureCodeParser.cs" />
     <Compile Include="Country.cs" />
+    <Compile Include="IGeoFileParser.cs" />
     <Compile Include="PhoneInformation.cs" />
     <Compile Include="PhoneManager.cs" />
     <Compile Include="TimeZone.cs" />

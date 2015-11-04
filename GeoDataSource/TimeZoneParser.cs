@@ -3,17 +3,23 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace GeoDataSource
 {
-    public class TimeZoneParser
+    public class TimeZoneParser : IGeoFileParser<TimeZone>
     {
-        public static List<TimeZone> ParseFile(string File)
+        readonly string _file;
+        public TimeZoneParser(string file)
         {
+            _file = file;
+        }
 
-            List<TimeZone> Names = new List<TimeZone>();
+        public ICollection<TimeZone> ParseFile()
+        {
+            ICollection<TimeZone> Names = new List<TimeZone>();
             int count = 0;
-            using (System.IO.StreamReader rdr = new System.IO.StreamReader(File))
+            using (var rdr = new StreamReader(_file))
             {
                 string line = "";
                 do
@@ -27,17 +33,14 @@ namespace GeoDataSource
                     count++;
                 } while (!string.IsNullOrEmpty(line));
             }
-
             return Names;
         }
 
-        private static TimeZone ParseLine(string Line)
+        static TimeZone ParseLine(string Line)
         {
             TimeZone n = new TimeZone();
             string[] parts = Line.Split('\t');
             double id = 0;
-
-
 
             n.CountryCode = parts[0];
             n.TimeZoneId = parts[1];

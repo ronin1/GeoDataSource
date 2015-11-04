@@ -3,17 +3,23 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace GeoDataSource
 {
-    public class CountryParser
+    public class CountryParser : IGeoFileParser<Country>
     {
-        public static List<Country> ParseFile(string File)
+        readonly string _file;
+        public CountryParser(string file)
         {
+            _file = file;
+        }
 
-            List<Country> Names = new List<Country>();
+        public ICollection<Country> ParseFile()
+        {
+            ICollection<Country> Names = new List<Country>();
             int count = 0;
-            using (System.IO.StreamReader rdr = new System.IO.StreamReader(File))
+            using (var rdr = new StreamReader(_file))
             {
                 string line = "";
                 do
@@ -27,7 +33,6 @@ namespace GeoDataSource
                     count++;
                 } while (!string.IsNullOrEmpty(line));
             }
-
             return Names;
         }
 

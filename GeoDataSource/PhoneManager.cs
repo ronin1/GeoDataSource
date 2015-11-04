@@ -15,7 +15,7 @@ namespace GeoDataSource
         private PhoneManager() { }
         static PhoneManager()
         {
-            if (System.IO.File.Exists(DataFile))
+            if (File.Exists(DataFile))
             {
                 _current.PhoneInformation = ParseFromFile();
             }
@@ -32,7 +32,7 @@ namespace GeoDataSource
 
         public static string DataFile
         {
-            get { return System.IO.Path.Combine(Root, dataFile + ".dat"); }
+            get { return Path.Combine(Root, dataFile + ".dat"); }
         }
 
         private static string Root
@@ -46,7 +46,7 @@ namespace GeoDataSource
                 return fi.Directory.FullName;
             }
         }
-        public List<PhoneInformation> PhoneInformation { get; private set; }
+        public ICollection<PhoneInformation> PhoneInformation { get; private set; }
         public static PhoneManager Current
         {
             get { return _current; }
@@ -126,7 +126,7 @@ namespace GeoDataSource
 
         private static List<PhoneInformation> ParseFromFile()
         {
-            return ParseFromBytes(System.IO.File.ReadAllBytes(DataFile));
+            return ParseFromBytes(File.ReadAllBytes(DataFile));
         }
     }
 }

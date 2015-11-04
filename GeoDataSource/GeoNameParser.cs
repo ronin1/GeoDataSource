@@ -1,22 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 
 namespace GeoDataSource
 {
-    public class GeoNameParser
+    public class GeoNameParser : IGeoFileParser<GeoName>
     {
-        public static GeoData ParseFile(string GeoNameFile, string TimeZoneFile, string FeatureCodeFile, string countryInfoFile)
+        readonly string _file;
+        public GeoNameParser(string file)
         {
-            var gd = new GeoData();
-            gd.TimeZones  = TimeZoneParser.ParseFile(TimeZoneFile);
-            gd.FeatureCodes = FeatureCodeParser.ParseFile(FeatureCodeFile);
-            gd.Countries = CountryParser.ParseFile(countryInfoFile);
+            _file = file;
+        }
 
-
-            List<GeoName> Names = new List<GeoName>();
+        public ICollection<GeoName> ParseFile()
+        {
+            ICollection<GeoName> names = new LinkedList<GeoName>();
             int count = 0;
-            using (System.IO.StreamReader rdr = new System.IO.StreamReader(GeoNameFile))
+            using (var rdr = new StreamReader(_file))
             {
                 string line = "";
                 do
@@ -27,15 +28,13 @@ namespace GeoDataSource
                         GeoName n = ParseLine(line);
                         if (n.FeatureClass.StartsWith("ADM1"))// || n.FeatureClass.StartsWith("ADM2"))
                         {
-                            Names.Add(n);
-                        }
-                        
+                            names.Add(n);
+                        }                        
                     }
                     count++;
                 } while (!string.IsNullOrEmpty(line));
             }
-            gd.GeoNames = Names;
-            return gd;
+            return names;
         }
 
         static GeoName ParseLine(string Line)
