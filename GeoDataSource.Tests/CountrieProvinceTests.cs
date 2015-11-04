@@ -56,7 +56,7 @@ namespace GeoDataSource.Tests
         [TestCase("US", "New York", ExpectedResult = "America/New_York")]
         [TestCase("US", "California", ExpectedResult = "America/Los_Angeles")]
         [TestCase("CA", "British Columbia", ExpectedResult = "America/Vancouver")]
-        public string GetProvinceBCTimeZone(string country, string province)
+        public string GetProvinceTimeZone(string country, string province)
         {
             var c = GeoData.Current.GetCountry(country);
             var pp = GeoData.Current.ProvincesByCountry(c);
@@ -67,7 +67,7 @@ namespace GeoDataSource.Tests
             Assert.IsNotNull(prov);
             Assert.IsNotNull(prov.Country);
             Assert.IsNotNull(prov.TimeZone);
-            Assert.Greater(prov.Latitude + prov.Longitude, 0);
+            Assert.AreNotEqual(0, prov.Latitude + prov.Longitude);
 
             var tz = GeoData.Current.TimeZone(prov);           
             Assert.AreEqual(prov.TimeZone.TimeZoneId, tz.TimeZoneId);
