@@ -17,8 +17,8 @@
     <dependencies>
       <dependency id="SharpZipLib" version="0.86.0" />
     </dependencies>
+    <!--<files>
+      <file src="bin\$configuration$\*.dat" target="lib\net45\" />
+    </files>-->
   </metadata>
-  <files>
-    <file src="bin\$configuration$\*.dat" target="lib\net45\" />
-  </files>
 </package>
