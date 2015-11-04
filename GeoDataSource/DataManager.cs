@@ -167,7 +167,6 @@ namespace GeoDataSource
                         TimeZonesFile = Path.Combine(Root, "timeZones.txt"),
                         AllCountriesPostal = Path.Combine(Root, POSTAL_CODE + ".zip"),
                     };
-
                     string lastModifiedFile = Path.Combine(Root, LAST_MODIFIED_FILE);
                     string tmpFile = Path.Combine(Root, Guid.NewGuid().ToString());
                     bool canReadWrite = steps.HasFlag(UpdateStep.WriteCheck) ? CanWriteTest(tmpFile) : true;
@@ -176,8 +175,7 @@ namespace GeoDataSource
 
                     if (canReadWrite && shouldDownload)
                     {
-                        var downloadTasks = new List<Task>();
-                        
+                        var downloadTasks = new List<Task>();                        
                         if (steps.HasFlag(UpdateStep.Download))
                         {
                             downloadTasks.Add(DownloadFile(COUNTRY_INFO_URL, fs.CountryInfoFile));
@@ -210,7 +208,6 @@ namespace GeoDataSource
                                     _logger.Error(s, dex);
                                 }
                             }));
-
                             Task.WaitAll(downloadTasks.ToArray());
                         }
                         if (steps.HasFlag(UpdateStep.Extraction))
@@ -252,11 +249,11 @@ namespace GeoDataSource
             client.DownloadProgressChanged += (o,e) =>
             {
                 try {
-                    double pct = Math.Round((double)e.BytesReceived / e.TotalBytesToReceive, 3) * 100;
+                    double pct = Math.Round((double)e.BytesReceived / e.TotalBytesToReceive, 2) * 100;
                     if (lastPct < pct)
                     {
                         lastPct = pct;
-                        _logger.DebugFormat("DownloadFile: {0:F1}% {1}", pct, f.Name);
+                        _logger.DebugFormat("DownloadFile: {0:F0}% {1}", pct, f.Name);
                     }
                 }
                 catch(Exception ex)

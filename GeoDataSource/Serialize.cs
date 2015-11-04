@@ -8,7 +8,6 @@ namespace GeoDataSource
 {
     public class Serialize
     {
-
         public enum SerializationMethods { Binary, XML };
         public static bool SerializeToDisk(object request, SerializationMethods Method, string Filename)
         {
@@ -16,10 +15,16 @@ namespace GeoDataSource
             return SerializeBinaryToDisk(request, Filename);
 
         }
-        public static bool SerializeBinaryToDisk(object request, string Filename)
+        public static bool SerializeBinaryToDisk(object request, string filename)
         {
-            System.IO.File.WriteAllBytes(Filename, SerializeBinaryAsBytes(request));
-            return System.IO.File.Exists(Filename);
+            //File.WriteAllBytes(filename, SerializeBinaryAsBytes(request));
+            var bf = new BinaryFormatter();
+            using (var fs = new FileStream(filename, FileMode.OpenOrCreate, FileAccess.Write))
+            {
+                bf.Serialize(fs, request);
+                fs.Flush();
+            }
+            return File.Exists(filename);
         }
 
         public static MemoryStream SerializeBinary(object request)
@@ -94,9 +99,9 @@ namespace GeoDataSource
         }
         public static bool SerializeXMLToDisk(object request, string Filename)
         {
-            if (System.IO.File.Exists(Filename)) System.IO.File.Delete(Filename);
-            System.IO.File.WriteAllText(Filename, SerializeXMLAsString(request));
-            return System.IO.File.Exists(Filename);
+            if (File.Exists(Filename)) File.Delete(Filename);
+            File.WriteAllText(Filename, SerializeXMLAsString(request));
+            return File.Exists(Filename);
         }
         public static string SerializeXMLAsString(object request)
         {
@@ -149,7 +154,7 @@ namespace GeoDataSource
 
         public static T DeserializeBinaryFromResource<T>(string Name)
         {
-            using (System.IO.BinaryReader rdr = new BinaryReader(typeof(GeoData).Assembly.GetManifestResourceStream(Name)))
+            using (BinaryReader rdr = new BinaryReader(typeof(GeoData).Assembly.GetManifestResourceStream(Name)))
             {
                 byte[] data = rdr.ReadBytes((int)rdr.BaseStream.Length);
                 return (T)DeSerializeBinary(new MemoryStream(data));
@@ -158,13 +163,13 @@ namespace GeoDataSource
 
         public static T DeserializeBinaryFromDisk<T>(string Filename)
         {
-            byte[] data = System.IO.File.ReadAllBytes(Filename);
+            byte[] data = File.ReadAllBytes(Filename);
             return (T)DeSerializeBinary(new MemoryStream(data));
         }
 
         public static T DeserializeXMLFromDisk<T>(string Filename)
         {
-            string contents = System.IO.File.ReadAllText(Filename);
+            string contents = File.ReadAllText(Filename);
             return DeSerializeXML<T>(contents);
         }
 
@@ -201,7 +206,7 @@ namespace GeoDataSource
         }
 
 
-        public static string ConvertStreamToString(System.IO.Stream Stream)
+        public static string ConvertStreamToString(Stream Stream)
         {
             if (Stream != null && Stream.Length > 0)
             {
@@ -213,13 +218,13 @@ namespace GeoDataSource
             return null;
         }
 
-        public static string ConvertStreamToString(System.IO.MemoryStream Stream)
+        public static string ConvertStreamToString(MemoryStream Stream)
         {
             byte[] d = ConvertStreamToBytes(Stream);
             if (d == null) return "";
             return System.Text.ASCIIEncoding.ASCII.GetString(d);
         }
-        public static byte[] ConvertStreamToBytes(System.IO.MemoryStream Stream)
+        public static byte[] ConvertStreamToBytes(MemoryStream Stream)
         {
             if (Stream == null) return null;
             if (Stream != null && Stream.CanSeek && Stream.Position > 0) Stream.Position = 0;
@@ -228,13 +233,13 @@ namespace GeoDataSource
             Stream.Close();
             return d;
         }
-        public static System.IO.MemoryStream ConvertStringToStream(string Data)
+        public static MemoryStream ConvertStringToStream(string Data)
         {
             return ConvertBytesToStream(System.Text.ASCIIEncoding.ASCII.GetBytes(Data));
         }
-        public static System.IO.MemoryStream ConvertBytesToStream(byte[] Data)
+        public static MemoryStream ConvertBytesToStream(byte[] Data)
         {
-            return new System.IO.MemoryStream(Data);
+            return new MemoryStream(Data);
         }
     }
 
