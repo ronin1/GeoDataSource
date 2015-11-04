@@ -9,7 +9,7 @@ namespace GeoDataSource
         public int ID { get; set; }
         public string Name { get; set; }
         public string AsciiName { get; set; }
-        public List<string> AlternateNames { get; set; }
+        public ICollection<string> AlternateNames { get; set; }
         public decimal Latitude { get; set; }
         public decimal Longitude { get; set; }
         public string FeatureClass { get; set; }

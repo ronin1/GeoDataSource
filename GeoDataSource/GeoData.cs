@@ -45,6 +45,7 @@ namespace GeoDataSource
 	    public ICollection<FeatureCode> FeatureCodes { get; internal set; }
         public ICollection<GeoName> GeoNames { get; internal set; }
         public ICollection<Country> Countries { get; internal set; }
+        public ICollection<PostalCode> PostalCodes { get; internal set; }
 
 		//private static List<System.Globalization.RegionInfo> countries = null;
 

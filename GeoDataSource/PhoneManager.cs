@@ -54,7 +54,9 @@ namespace GeoDataSource
 
         public IEnumerable<PhoneInformation> AllByCountry(string country)
         {
-            return (from p in this.PhoneInformation where p.Country == country select p) ;
+            return from p in this.PhoneInformation
+                   where string.Compare(p.Country, country, true)==0
+                   select p;
         }
 
         public PhoneInformation AutoDetect(string Phone)

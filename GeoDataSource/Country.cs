@@ -9,7 +9,6 @@ namespace GeoDataSource
     [Serializable]
     public class Country
     {
-
         public string ISOAlpha2 { get; set; }
         public string ISOAlpha3 { get; set; }
         public string ISONumeric { get; set; }
@@ -32,8 +31,6 @@ namespace GeoDataSource
         public string Neighbours { get; set; }
         public string EquivalentFipsCode { get; set; }
 
-
         public IEnumerable<PhoneInformation> PhoneInformation { get; set; }
-
     }
 }

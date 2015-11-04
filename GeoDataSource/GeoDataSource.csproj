@@ -57,9 +57,12 @@
     <Compile Include="CountryParser.cs" />
     <Compile Include="FeatureCodeParser.cs" />
     <Compile Include="Country.cs" />
+    <Compile Include="GPSAccuracy.cs" />
     <Compile Include="IGeoFileParser.cs" />
     <Compile Include="PhoneInformation.cs" />
     <Compile Include="PhoneManager.cs" />
+    <Compile Include="PostalCode.cs" />
+    <Compile Include="PostalCodeParser.cs" />
     <Compile Include="TimeZone.cs" />
     <Compile Include="DataManager.cs" />
     <Compile Include="Extensions\EAP\EAPCommon.cs" />

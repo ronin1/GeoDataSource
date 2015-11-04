@@ -37,12 +37,13 @@ namespace GeoDataSource
             return names;
         }
 
-        static GeoName ParseLine(string Line)
+        static GeoName ParseLine(string line)
         {
             GeoName n = new GeoName();
-            string[] parts = Line.Split('\t');
+            string[] parts = line.Split('\t');
             int id = 0;
-            if (int.TryParse(parts[0], out id)) n.ID = id;
+            if (int.TryParse(parts[0], out id))
+                n.ID = id;
 
             n.Name = parts[1];
             n.AsciiName = parts[2];

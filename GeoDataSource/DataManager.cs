@@ -27,7 +27,7 @@ namespace GeoDataSource
 
         public string DataFile
         {
-            get { return Path.Combine(Root, dataFile + ".dat"); }
+            get { return Path.Combine(Root, DATA_FILE + ".dat"); }
         }
 
         string Root
@@ -42,18 +42,20 @@ namespace GeoDataSource
             }
         }
 
-        const string LastModified = "GeoDataSource-LastModified.txt";
-        const string allCountriesUrl = "http://download.geonames.org/export/dump/allCountries.zip";
+        const string LAST_MODIFIED_FILE = "GeoDataSource-LastModified.txt";
+        const string ALL_COUNTRIES_URL = "http://download.geonames.org/export/dump/allCountries.zip";
         //const string alternateNamesUrl = "http://download.geonames.org/export/dump/alternateNames.zip";
         //const string admin1CodesUrl = "http://download.geonames.org/export/dump/admin1CodesASCII.txt";
         //const string admin2CodesUrl = "http://download.geonames.org/export/dump/admin2Codes.txt";
-        const string countryInfoUrl = "http://download.geonames.org/export/dump/countryInfo.txt";
-        const string featureCodes_enUrl = "http://download.geonames.org/export/dump/featureCodes_en.txt";
+        const string COUNTRY_INFO_URL = "http://download.geonames.org/export/dump/countryInfo.txt";
+        const string FEATURE_CODES_EN_URL = "http://download.geonames.org/export/dump/featureCodes_en.txt";
         //const string languagecodesUrl = "http://download.geonames.org/export/dump/iso-languagecodes.txt";
-        const string timeZonesUrl = "http://download.geonames.org/export/dump/timeZones.txt";
+        const string TIME_ZONE_URL = "http://download.geonames.org/export/dump/timeZones.txt";
+        const string POSTAL_CODE_URL = "http://download.geonames.org/export/zip/allCountries.zip";
+        const string POSTAL_CODE = "allCountries.postal";
 
-        const string dataFile = "GeoDataSource";
-        const string countriesRawFile = "allCountries.txt";
+        const string DATA_FILE = "GeoDataSource";
+        const string COUNTRIES_RAW_FILE = "allCountries.txt";
         static readonly object _lock = new object();
 
         #region update pre-checks
@@ -95,7 +97,7 @@ namespace GeoDataSource
                     var request = new WebClientRequest();
                     request.Headers = new WebHeaderCollection();
                     var client = new ParallelWebClient(request);
-                    client.OpenReadTask(allCountriesUrl, "HEAD").ContinueWith(t =>
+                    client.OpenReadTask(ALL_COUNTRIES_URL, "HEAD").ContinueWith(t =>
                     {
                         var headers = client.ResponseHeaders;
                         foreach (string h in headers.Keys)
@@ -159,13 +161,14 @@ namespace GeoDataSource
                 {
                     var fs = new GeoFileSet(Root)
                     {
-                        allCountriesFile = Path.Combine(Root, dataFile + ".zip"),
+                        allCountriesFile = Path.Combine(Root, DATA_FILE + ".zip"),
                         countryInfoFile = Path.Combine(Root, "countryInfo.txt"),
                         featureCodes_enFile = Path.Combine(Root, "featureCodes_en.txt"),
                         timeZonesFile = Path.Combine(Root, "timeZones.txt"),
+                        allCountriesPostal = Path.Combine(Root, POSTAL_CODE + ".zip"),
                     };
 
-                    string lastModifiedFile = Path.Combine(Root, LastModified);
+                    string lastModifiedFile = Path.Combine(Root, LAST_MODIFIED_FILE);
                     string tmpFile = Path.Combine(Root, Guid.NewGuid().ToString());
                     bool canReadWrite = steps.HasFlag(UpdateStep.WriteCheck) ? CanWriteTest(tmpFile) : true;
                     bool shouldDownload = steps.HasFlag(UpdateStep.UpdateCheck) ? 
@@ -177,10 +180,11 @@ namespace GeoDataSource
                         
                         if (steps.HasFlag(UpdateStep.Download))
                         {
-                            downloadTasks.Add(DownloadFile(countryInfoUrl, fs.countryInfoFile));
-                            downloadTasks.Add(DownloadFile(featureCodes_enUrl, fs.featureCodes_enFile));
-                            downloadTasks.Add(DownloadFile(timeZonesUrl, fs.timeZonesFile));
-                            downloadTasks.Add(DownloadFile(allCountriesUrl, fs.allCountriesFile, c =>
+                            downloadTasks.Add(DownloadFile(COUNTRY_INFO_URL, fs.countryInfoFile));
+                            downloadTasks.Add(DownloadFile(FEATURE_CODES_EN_URL, fs.featureCodes_enFile));
+                            downloadTasks.Add(DownloadFile(TIME_ZONE_URL, fs.timeZonesFile));
+                            downloadTasks.Add(DownloadFile(POSTAL_CODE_URL, fs.allCountriesPostal));
+                            downloadTasks.Add(DownloadFile(ALL_COUNTRIES_URL, fs.allCountriesFile, c =>
                             {
                                 try
                                 {
@@ -298,10 +302,16 @@ namespace GeoDataSource
             public string timeZonesFile { get; set; }
             public string featureCodes_enFile { get; set; }
             public string countryInfoFile { get; set; }
+            public string allCountriesPostal { get; set; }
 
             public string countriesRawPath
             {
-                get { return Path.Combine(Root, countriesRawFile); }
+                get { return Path.Combine(Root, COUNTRIES_RAW_FILE); }
+            }
+
+            public string postalsRawPath
+            {
+                get { return Path.Combine(Root, POSTAL_CODE, COUNTRIES_RAW_FILE); }
             }
 
             public IEnumerable<string> AllFiles
@@ -313,8 +323,19 @@ namespace GeoDataSource
                     yield return featureCodes_enFile;
                     yield return countryInfoFile;
                     yield return countriesRawPath;
+                    yield return postalsRawPath;
                 }
             }
+        }
+
+        void Unzip(string source, string destination)
+        {
+            var fz = new FastZip();
+            var af = new FileInfo(source);
+            DateTime unzipStart = DateTime.UtcNow;
+            _logger.DebugFormat("Unzip: Begin => {0}", af.Name);
+            fz.ExtractZip(source, destination, FastZip.Overwrite.Always, null, null, null, true);
+            _logger.InfoFormat("Unzip: Completed {0} => {1}", DateTime.UtcNow - unzipStart, af.Name);
         }
 
         bool ConvertZipToDat(GeoFileSet fs)
@@ -330,16 +351,18 @@ namespace GeoDataSource
                     File.Delete(fs.countriesRawPath);
                 }
 
-                var fz = new FastZip();
-                var af = new FileInfo(fs.allCountriesFile);
-                DateTime unzipStart = DateTime.UtcNow;
-                _logger.DebugFormat("ConvertZipToDat: Begin unzip => {0}", af.Name);
-                fz.ExtractZip(fs.allCountriesFile, Root, FastZip.Overwrite.Always, null, null, null, true);
-                _logger.InfoFormat("ConvertZipToDat: Completed unzip {0} => {1}", DateTime.UtcNow - unzipStart, af.Name);
+                Unzip(fs.allCountriesFile, Root);
+
+                var zd = new DirectoryInfo(Path.Combine(Root, POSTAL_CODE));
+                if (zd.Exists)
+                    zd.Delete(true);
+
+                zd.Create();
+                Unzip(fs.allCountriesPostal, zd.FullName);
 
                 if (File.Exists(fs.countriesRawPath))
                 {
-                    GeoData gd = ParseGeoFiles(fs, f);
+                    GeoData gd = ParseGeoFiles(fs);
 
                     _logger.DebugFormat("ConvertZipToDat: storing dat => {0}", DataFile);
                     Serialize.SerializeBinaryToDisk(gd, DataFile);
@@ -356,19 +379,38 @@ namespace GeoDataSource
             return success;
         }
 
-        GeoData ParseGeoFiles(GeoFileSet fs, FileInfo f)
+        GeoData ParseGeoFiles(GeoFileSet fs)
         {
             DateTime extractionStart = DateTime.UtcNow;
-            _logger.DebugFormat("ConvertZipToDat: Begin Extraction => {0}", f.Name);
+            _logger.Debug("ParseGeoFiles: Begin Extraction");
 
             var gd = new GeoData();            
             gd.TimeZones = new TimeZoneParser(fs.timeZonesFile).ParseFile();
             gd.FeatureCodes = new FeatureCodeParser(fs.featureCodes_enFile).ParseFile();
             gd.Countries = new CountryParser(fs.countryInfoFile).ParseFile();
             gd.GeoNames = new GeoNameParser(fs.countriesRawPath).ParseFile();
-            
-            _logger.InfoFormat("ConvertZipToDat: Completed Extraction {0} => {1}", DateTime.UtcNow - extractionStart, f.Name);
+
+            var zf = new FileInfo(fs.postalsRawPath);
+            if (zf.Exists)
+            {
+                gd.PostalCodes = new PostalCodeParser(zf.FullName).ParseFile();
+                LinkPostalElements(gd);
+            }
+            _logger.InfoFormat("ParseGeoFiles: Completed Extraction {0}", DateTime.UtcNow - extractionStart);
             return gd;
+        }
+
+        void LinkPostalElements(GeoData gd)
+        {
+            if(gd.PostalCodes != null && gd.PostalCodes.Count > 0 &&
+                gd.GeoNames != null && gd.GeoNames.Count > 0)
+            {
+                Dictionary<string, Country> iso2Map = (from c in gd.Countries
+                                                       where c != null && !string.IsNullOrWhiteSpace(c.ISOAlpha2)
+                                                       group c by c.ISOAlpha2 into cg
+                                                       select cg).ToDictionary(g => g.Key, g => g.FirstOrDefault());
+                //Dictionary<string, Admin1Code> adm1Map = 
+            }
         }
 
         void FileCleanup(GeoFileSet fs)
