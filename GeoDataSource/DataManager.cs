@@ -161,11 +161,11 @@ namespace GeoDataSource
                 {
                     var fs = new GeoFileSet(Root)
                     {
-                        allCountriesFile = Path.Combine(Root, DATA_FILE + ".zip"),
-                        countryInfoFile = Path.Combine(Root, "countryInfo.txt"),
-                        featureCodes_enFile = Path.Combine(Root, "featureCodes_en.txt"),
-                        timeZonesFile = Path.Combine(Root, "timeZones.txt"),
-                        allCountriesPostal = Path.Combine(Root, POSTAL_CODE + ".zip"),
+                        AllCountriesFile = Path.Combine(Root, DATA_FILE + ".zip"),
+                        CountryInfoFile = Path.Combine(Root, "countryInfo.txt"),
+                        FeatureCodes_EnFile = Path.Combine(Root, "featureCodes_en.txt"),
+                        TimeZonesFile = Path.Combine(Root, "timeZones.txt"),
+                        AllCountriesPostal = Path.Combine(Root, POSTAL_CODE + ".zip"),
                     };
 
                     string lastModifiedFile = Path.Combine(Root, LAST_MODIFIED_FILE);
@@ -180,11 +180,11 @@ namespace GeoDataSource
                         
                         if (steps.HasFlag(UpdateStep.Download))
                         {
-                            downloadTasks.Add(DownloadFile(COUNTRY_INFO_URL, fs.countryInfoFile));
-                            downloadTasks.Add(DownloadFile(FEATURE_CODES_EN_URL, fs.featureCodes_enFile));
-                            downloadTasks.Add(DownloadFile(TIME_ZONE_URL, fs.timeZonesFile));
-                            downloadTasks.Add(DownloadFile(POSTAL_CODE_URL, fs.allCountriesPostal));
-                            downloadTasks.Add(DownloadFile(ALL_COUNTRIES_URL, fs.allCountriesFile, c =>
+                            downloadTasks.Add(DownloadFile(COUNTRY_INFO_URL, fs.CountryInfoFile));
+                            downloadTasks.Add(DownloadFile(FEATURE_CODES_EN_URL, fs.FeatureCodes_EnFile));
+                            downloadTasks.Add(DownloadFile(TIME_ZONE_URL, fs.TimeZonesFile));
+                            downloadTasks.Add(DownloadFile(POSTAL_CODE_URL, fs.AllCountriesPostal));
+                            downloadTasks.Add(DownloadFile(ALL_COUNTRIES_URL, fs.AllCountriesFile, c =>
                             {
                                 try
                                 {
@@ -206,7 +206,7 @@ namespace GeoDataSource
                                 }
                                 catch (Exception dex)
                                 {
-                                    string s = string.Format("DownloadFile: CallBack => {0}", new FileInfo(fs.allCountriesFile).Name);
+                                    string s = string.Format("DownloadFile: CallBack => {0}", new FileInfo(fs.AllCountriesFile).Name);
                                     _logger.Error(s, dex);
                                 }
                             }));
@@ -298,18 +298,18 @@ namespace GeoDataSource
                 Root = root;
             }
 
-            public string allCountriesFile { get; set; }
-            public string timeZonesFile { get; set; }
-            public string featureCodes_enFile { get; set; }
-            public string countryInfoFile { get; set; }
-            public string allCountriesPostal { get; set; }
+            public string AllCountriesFile { get; set; }
+            public string TimeZonesFile { get; set; }
+            public string FeatureCodes_EnFile { get; set; }
+            public string CountryInfoFile { get; set; }
+            public string AllCountriesPostal { get; set; }
 
-            public string countriesRawPath
+            public string CountriesRawPath
             {
                 get { return Path.Combine(Root, COUNTRIES_RAW_FILE); }
             }
 
-            public string postalsRawPath
+            public string PostalsRawPath
             {
                 get { return Path.Combine(Root, POSTAL_CODE, COUNTRIES_RAW_FILE); }
             }
@@ -318,12 +318,12 @@ namespace GeoDataSource
             {
                 get
                 {
-                    yield return allCountriesFile;
-                    yield return timeZonesFile;
-                    yield return featureCodes_enFile;
-                    yield return countryInfoFile;
-                    yield return countriesRawPath;
-                    yield return postalsRawPath;
+                    yield return AllCountriesFile;
+                    yield return TimeZonesFile;
+                    yield return FeatureCodes_EnFile;
+                    yield return CountryInfoFile;
+                    yield return CountriesRawPath;
+                    yield return PostalsRawPath;
                 }
             }
         }
@@ -341,32 +341,31 @@ namespace GeoDataSource
         bool ConvertZipToDat(GeoFileSet fs)
         {
             bool success = false;
-            var f = new FileInfo(fs.allCountriesFile);
+            var f = new FileInfo(fs.AllCountriesFile);
             //downloaded, now convert zip into serialized dat file
-            if (File.Exists(fs.allCountriesFile))
+            if (File.Exists(fs.AllCountriesFile))
             {
-                if (File.Exists(fs.countriesRawPath))
+                if (File.Exists(fs.CountriesRawPath))
                 {
-                    _logger.DebugFormat("ConvertZipToDat: removing {0}", new FileInfo(fs.countriesRawPath).Name);
-                    File.Delete(fs.countriesRawPath);
+                    _logger.DebugFormat("ConvertZipToDat: removing {0}", new FileInfo(fs.CountriesRawPath).Name);
+                    File.Delete(fs.CountriesRawPath);
                 }
 
-                Unzip(fs.allCountriesFile, Root);
+                Unzip(fs.AllCountriesFile, Root);
 
                 var zd = new DirectoryInfo(Path.Combine(Root, POSTAL_CODE));
                 if (zd.Exists)
                     zd.Delete(true);
 
                 zd.Create();
-                Unzip(fs.allCountriesPostal, zd.FullName);
+                Unzip(fs.AllCountriesPostal, zd.FullName);
 
-                if (File.Exists(fs.countriesRawPath))
+                if (File.Exists(fs.CountriesRawPath))
                 {
                     GeoData gd = ParseGeoFiles(fs);
 
                     _logger.DebugFormat("ConvertZipToDat: storing dat => {0}", DataFile);
                     Serialize.SerializeBinaryToDisk(gd, DataFile);
-
                     _logger.Info("ConvertZipToDat: completed");
                     success = true;
                 }
@@ -385,12 +384,12 @@ namespace GeoDataSource
             _logger.Debug("ParseGeoFiles: Begin Extraction");
 
             var gd = new GeoData();            
-            gd.TimeZones = new TimeZoneParser(fs.timeZonesFile).ParseFile();
-            gd.FeatureCodes = new FeatureCodeParser(fs.featureCodes_enFile).ParseFile();
-            gd.Countries = new CountryParser(fs.countryInfoFile).ParseFile();
-            gd.GeoNames = new GeoNameParser(fs.countriesRawPath).ParseFile();
+            gd.TimeZones = new TimeZoneParser(fs.TimeZonesFile).ParseFile();
+            gd.FeatureCodes = new FeatureCodeParser(fs.FeatureCodes_EnFile).ParseFile();
+            gd.Countries = new CountryParser(fs.CountryInfoFile).ParseFile();
+            gd.GeoNames = new GeoNameParser(fs.CountriesRawPath).ParseFile();
 
-            var zf = new FileInfo(fs.postalsRawPath);
+            var zf = new FileInfo(fs.PostalsRawPath);
             if (zf.Exists)
             {
                 gd.PostalCodes = new PostalCodeParser(zf.FullName).ParseFile();
@@ -408,8 +407,17 @@ namespace GeoDataSource
                 Dictionary<string, Country> iso2Map = (from c in gd.Countries
                                                        where c != null && !string.IsNullOrWhiteSpace(c.ISOAlpha2)
                                                        group c by c.ISOAlpha2 into cg
-                                                       select cg).ToDictionary(g => g.Key, g => g.FirstOrDefault());
-                //Dictionary<string, Admin1Code> adm1Map = 
+                                                       select cg).ToDictionary(g => g.Key.ToLower().Trim(), g => g.FirstOrDefault());
+                foreach(PostalCode p in gd.PostalCodes)
+                {
+                    string k = p.Country.ISOAlpha2;
+                    if (string.IsNullOrWhiteSpace(k))
+                        continue;
+
+                    k = k.ToLower().Trim();
+                    if (iso2Map.ContainsKey(k))
+                        p.Country = iso2Map[k];
+                }
             }
         }
 

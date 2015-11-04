@@ -3,11 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
+using log4net;
 
 namespace GeoDataSource
 {
     public class PostalCodeParser : IGeoFileParser<PostalCode>
     {
+        static readonly ILog _logger = LogManager.GetLogger(typeof(PostalCodeParser));
+
         readonly string _file;
         public PostalCodeParser(string file)
         {
@@ -16,6 +19,8 @@ namespace GeoDataSource
 
         public ICollection<PostalCode> ParseFile()
         {
+            DateTime started = DateTime.UtcNow;
+            _logger.Debug("ParseFile: Start");
             ICollection<PostalCode> codes = new LinkedList<PostalCode>();
             int count = 0;
             using (var rdr = new StreamReader(_file))
@@ -35,6 +40,7 @@ namespace GeoDataSource
                     count++;
                 } while (!string.IsNullOrEmpty(line));
             }
+            _logger.InfoFormat("ParseFile: End {0}", DateTime.UtcNow - started);
             return codes;
         }
 

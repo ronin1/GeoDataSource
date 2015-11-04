@@ -4,11 +4,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
+using log4net;
 
 namespace GeoDataSource
 {
     public class TimeZoneParser : IGeoFileParser<TimeZone>
     {
+        static readonly ILog _logger = LogManager.GetLogger(typeof(TimeZoneParser));
+
         readonly string _file;
         public TimeZoneParser(string file)
         {
@@ -17,7 +20,9 @@ namespace GeoDataSource
 
         public ICollection<TimeZone> ParseFile()
         {
-            ICollection<TimeZone> Names = new List<TimeZone>();
+            DateTime started = DateTime.UtcNow;
+            _logger.Debug("ParseFile: Start");
+            ICollection<TimeZone> names = new List<TimeZone>();
             int count = 0;
             using (var rdr = new StreamReader(_file))
             {
@@ -28,28 +33,40 @@ namespace GeoDataSource
                     if (!string.IsNullOrEmpty(line) && !line.StartsWith("CountryCode"))
                     {
                         TimeZone n = ParseLine(line);
-                        Names.Add(n);
+                        if(n != null)
+                            names.Add(n);
                     }
                     count++;
                 } while (!string.IsNullOrEmpty(line));
             }
-            return Names;
+            _logger.InfoFormat("ParseFile: End {0}", DateTime.UtcNow - started);
+            return names;
         }
 
-        static TimeZone ParseLine(string Line)
+        static TimeZone ParseLine(string line)
         {
-            TimeZone n = new TimeZone();
-            string[] parts = Line.Split('\t');
-            double id = 0;
+            try {
+                TimeZone n = new TimeZone();
+                string[] parts = line.Split('\t');
+                double id = 0;
 
-            n.CountryCode = parts[0];
-            n.TimeZoneId = parts[1];
+                n.CountryCode = parts[0];
+                n.TimeZoneId = parts[1];
 
-            if (double.TryParse(parts[2], out id)) n.GMTOffSet = id;
-            if (double.TryParse(parts[3], out id)) n.DSTOffSet = id;
-            if (double.TryParse(parts[4], out id)) n.RawOffSet = id;
+                if (double.TryParse(parts[2], out id))
+                    n.GMTOffSet = id;
+                if (double.TryParse(parts[3], out id))
+                    n.DSTOffSet = id;
+                if (double.TryParse(parts[4], out id))
+                    n.RawOffSet = id;
 
-            return n;
+                return n;
+            }
+            catch(Exception ex)
+            {
+                _logger.Error("ParseLine: " + (line ?? "<null>"), ex);
+                return null;
+            }
         }
     }
 }
