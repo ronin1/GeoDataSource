@@ -50,7 +50,7 @@ namespace GeoDataSource
                 string[] parts = line.Split('\t');
                 int id = 0;
                 if (int.TryParse(parts[0], out id))
-                    n.ID = id;
+                    n.GeoNameId = id;
 
                 n.Name = parts[1];
                 n.AsciiName = parts[2];

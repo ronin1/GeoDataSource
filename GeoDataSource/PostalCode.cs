@@ -11,8 +11,6 @@ namespace GeoDataSource
     [Serializable]
     public class PostalCode
     {
-        public Country Country { get; set; }
-
         /// <summary>
         /// Actual zip or postal code
         /// </summary>
@@ -42,5 +40,8 @@ namespace GeoDataSource
         /// </summary>
         [ProtoMember(8)]
         public GPSAccuracy Accuracy { get; set; }
+
+        [ProtoMember(9, AsReference = true)]
+        public Country CountryInformation { get; set; }
     }
 }

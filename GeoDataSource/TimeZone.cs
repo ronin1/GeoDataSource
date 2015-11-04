@@ -7,7 +7,7 @@ using ProtoBuf;
 
 namespace GeoDataSource
 {
-    [ProtoContract]
+    [ProtoContract(AsReferenceDefault = true)]
     [Serializable]
     public class TimeZone
     {

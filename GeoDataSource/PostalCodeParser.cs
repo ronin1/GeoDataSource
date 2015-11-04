@@ -63,8 +63,8 @@ namespace GeoDataSource
 
                 string[] arr = line.Split('\t');
                 var c = new PostalCode();
-                c.Country = new Country { ISOAlpha2 = arr[0] };
-                if (inclCountries != null && !inclCountries.Contains(c.Country.ISOAlpha2.ToLower().Trim()))
+                c.CountryInformation = new Country { ISOAlpha2 = arr[0] };
+                if (inclCountries != null && !inclCountries.Contains(c.CountryInformation.ISOAlpha2.ToLower().Trim()))
                     return null;
 
                 c.Code = arr[1];

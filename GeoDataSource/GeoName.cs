@@ -9,7 +9,7 @@ namespace GeoDataSource
     public class GeoName
     {
         [ProtoMember(1)]
-        public int ID { get; set; }
+        public int GeoNameId { get; set; }
         [ProtoMember(2)]
         public string Name { get; set; }
         [ProtoMember(3)]
@@ -49,8 +49,10 @@ namespace GeoDataSource
         [ProtoMember(20)]
         public string TwoLetterName { get; set; }
 
+        [ProtoMember(21, AsReference = true)]
+        public Country CountryInformation { get; set; }
+
         public TimeZone TimeZone { get; set; }
         public FeatureCode FeatureCode { get; set; }
-        public Country CountryInformation { get; set; }
     }
 }

@@ -7,7 +7,7 @@ using ProtoBuf;
 
 namespace GeoDataSource
 {
-    [ProtoContract]
+    [ProtoContract(AsReferenceDefault = true)]
     [Serializable]
     public class Country
     {
@@ -49,8 +49,9 @@ namespace GeoDataSource
         public string EquivalentFipsCode { get; set; }
         [ProtoMember(19)]
         public string Neighbours { get; set; }
-
+        [ProtoMember(20)]
         public int GeoNameId { get; set; }
+
         public IEnumerable<PhoneInformation> PhoneInformation { get; set; }
     }
 }
