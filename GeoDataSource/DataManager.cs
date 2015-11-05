@@ -386,25 +386,11 @@ namespace GeoDataSource
             gd.Countries = new CountryParser(fs.CountryInfoFile).ParseFile();
             gd.GeoNames = new GeoNameParser(fs.CountriesRawPath).ParseFile();
 
-            Dictionary<string, Country> iso2Map = (from c in gd.Countries
-                                                   where c != null && !string.IsNullOrWhiteSpace(c.ISOAlpha2)
-                                                   group c by c.ISOAlpha2 into cg
-                                                   select cg).ToDictionary(g => g.Key.ToLower().Trim(), g => g.FirstOrDefault());
-            {
-                Dictionary<string, TimeZone[]> tzMap = (from t in gd.TimeZones
-                                                        where t != null && !string.IsNullOrWhiteSpace(t.TimeZoneId)
-                                                        group t by t.TimeZoneId.ToLower().Trim() into tg
-                                                        select tg).ToDictionary(g => g.Key, g => g.ToArray());
-                LinkNamesInfos(gd.GeoNames, iso2Map, tzMap);
-            }
-
             var zf = new FileInfo(fs.PostalsRawPath);
             if (zf.Exists)
             {
                 var incCountries = new[] { "US", "CA", "AT", "MX", "GB" };
-                //var incCountries = new[] { "US", "CA" };
                 gd.PostalCodes = new PostalCodeParser(zf.FullName, incCountries).ParseFile();
-                LinkPostalInfos(gd.PostalCodes, iso2Map);
             }
             _logger.InfoFormat("ParseGeoFiles: Completed Extraction {0}", DateTime.UtcNow - extractionStart);
             return gd;
