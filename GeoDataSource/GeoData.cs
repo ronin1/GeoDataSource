@@ -131,8 +131,8 @@ namespace GeoDataSource
             {                
                 if (radiusKm < 1)
                     radiusKm = 1;
-                else if (radiusKm > 100)
-                    radiusKm = 100; //max radius is 100k!
+                else if (radiusKm > 500)
+                    radiusKm = 500; //max radius is 500k!
 
                 decimal sampleSize = radiusKm < 1 ? 0 : (.01m * (decimal)radiusKm);
                 IEnumerable<char> keys = HashesSamples(lat, lng, sampleSize);
